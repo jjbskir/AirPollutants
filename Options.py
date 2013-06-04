@@ -341,6 +341,8 @@ class NROptionFile:
         
         self.state = state
         
+        self.modelRunTitle = scenarioOptions.modelRunTitle
+                
         self.tempMin = 50.0
         self.tempMax = 68.8
         self.tempMean = 60.0
@@ -395,8 +397,8 @@ Year of tech sel   :
                       Valid responses are: YES and NO
 ------------------------------------------------------
 /OPTIONS/
-Title 1            : 2011 current corn grain scenario
-Title 2            : All scripts written by Noah Fisher
+Title 1            : """ + self.modelRunTitle + """
+Title 2            : All scripts written by Noah Fisher and Jeremy Bohrer
 Fuel RVP for gas   : 8.0
 Oxygen Weight %    : 2.62
 Gas sulfur %       : 0.0339

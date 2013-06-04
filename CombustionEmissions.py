@@ -3,6 +3,9 @@ import csv
 import os
 
 """
+Writes raw data for emmisions to a .csv file that can be opened with excel.
+Then saves the data to the db with name <run_code>_raw.
+
 Transform the data from the default Nonroad output to a useful format. 
 Update database with emissions as well as copy emissions to static files
 for quick debugging and error checking.  

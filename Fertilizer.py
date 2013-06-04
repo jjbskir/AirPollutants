@@ -1,10 +1,18 @@
 import Options
 
-class Fertilizer(Options.ScenarioOptions): 
+'''
+Used to populate the newly created schema that stores emmision info.
+Inserts data into feed_nfert for emmisions from fertilizers.
+'''
+class Fertilizer(Options.ScenarioOptions):
+    
+    '''
+    @attention: should seperate db object so that the overhang of the class
+    that is not needed, will not be here. 
+    '''
     def __init__(self, modelRunTitle):
-        # should seperate db object so that the overhang of the class
-        # that is not needed, will not be here.
         Options.ScenarioOptions.__init__(self, modelRunTitle)
+        # gets used to save query to a text file for debugging purposes.
         self.documentFile = "Fertilizer"
            
     def setFertilizer(self, feed):

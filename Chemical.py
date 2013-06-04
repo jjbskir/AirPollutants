@@ -1,6 +1,15 @@
 import Options
 
+'''
+Used to populate the newly created schema that stores emmision info.
+Inserts data into cg_chem for emmisions from chemicals.
+'''
 class Chemical(Options.ScenarioOptions):
+    
+    '''
+    @attention: Only need db parts from OptionsScenario.
+    will need schema variabls.
+    '''
     def __init__(self, modelRunTitle):
         Options.ScenarioOptions.__init__(self, modelRunTitle)
         self.documentFile = "Chemical"

@@ -47,7 +47,7 @@ class Driver:
         #scenario title cannot be a run_code title 
         #scenario title cannot be more than 8 characters
         #               '--------'
-        modelRunTitle = 'NewModel'
+        modelRunTitle = 'new'
         runNRRuns = True
 #---------------------------------------------------------------------------------------------------------------------        
         
@@ -59,10 +59,12 @@ class Driver:
         
         
         if runNRRuns:
+            # go to each run code.
             for run_code in run_codes:
                 
                 print run_code
-                
+                #query database for appropriate production data based on run_code:
+                # fips, state, productions 
                 scenario.getData(run_code)
                    
                 #initialize variables
@@ -82,14 +84,19 @@ class Driver:
                 pop.initializePop(scenario.data[0])
                 scenario.initializeBatch()
                 
+                # go through each row of the data table.
                 for dat in scenario.data:
                     fips = str(dat[0])
-                                  
+                    '''
+                    The db table is ordered alphabetically.
+                    The search will look through a state. When the state changes in the table,
+                    then the loop will go to the else, closing the old files. and initializing new files.
+                    '''              
                     if dat[1] == state:
                         indicator = dat[2]
                         alo.writeIndicator(fips, indicator)
                         pop.append_Pop(fips, dat)
-                    # last time through write option file for nonroad?
+                    # last time through a state, will close different files, and start new ones.
                     else:
             #write *.opt file, close allocation file, close *.pop file            
                         Opt.NROptionFile(scenario, alo, state, fips_prior)
@@ -119,12 +126,12 @@ class Driver:
             #close scenariobatchfile
             scenario.scenarioBatchFile.close()
             
-    #----------------------------------------------        
-#            #call BATCH file here
-#            p = Popen(scenario.path+'opt/'+modelRunTitle+'.bat')
-#            #write values to a file to record assumptions. 
-#            #wait for batch file to complete 
-#            p.wait()            
+    #----------------------------------------------  
+            #call BATCH file here
+            p = Popen(scenario.path+'opt/'+modelRunTitle+'.bat')
+            #write values to a file to record assumptions. 
+            #wait for batch file to complete 
+            p.wait()            
     #----------------------------------------------        
 
 

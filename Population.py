@@ -310,7 +310,10 @@ class CornGrainIrrigationPop(Population):
         Population.__init__(self, scenarioOptions)
 
         self.alo = alo
-        
+    
+    '''
+    @attention: why does this have a different initialize then from the main Population class?
+    ''' 
     def initializePop(self, dat):
         Population.initializePop(self, dat)
         self.dat = dat

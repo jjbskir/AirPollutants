@@ -1,7 +1,9 @@
 import Options
 
 """
-Input run_codes in study and create appropriate tables
+Used to initiate a schema for saving all the results.
+The schema is titled as the name as the scenario title.
+Input run_codes in study and create appropriate tables.
 """
 class UpdateDatabase(Options.ScenarioOptions): 
     def __init__(self, modelRunTitle):
