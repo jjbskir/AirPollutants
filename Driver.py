@@ -1,8 +1,5 @@
-'''
-Main source code. Where the program is run.
-'''
-from subprocess import Popen
-
+import Container
+import Batch
 import Options as Opt
 import Allocate as Alo
 import Population as Pop
@@ -16,172 +13,167 @@ import NEIComparison
 import EmissionsPerGalFigure
 import RatioToNEIFigure
 import ContributionFigure
-"""
-"""
 
-class Driver: 
+'''
+Drives program.
+'''
+class Driver:
     
+    '''
+    Save important variables for the running of the program.
+    @param modelRunTitle: Scenario title.
+    @param run_codes: Run codes to keep track of where you are in the program  
+    '''
+    def __init__(self, _modelRunTitle, run_codes):
+        self.cont = Container.Container()
+        self.cont.set('modelRunTitle', self._addTitle(_modelRunTitle))
+        self.cont.set('run_codes', run_codes)
+        self.cont.set('path', 'C:/Nonroad/%s/' % (_modelRunTitle))
+        
+        self.batch = Batch.Batch(self.cont)
+        
+        self.modelRunTitle = self._addTitle(_modelRunTitle)
+        self.run_codes = run_codes
     
-    if __name__ == "__main__":     
-
-#---------------------------------------------------------------------------------------------------------------------        
-        #Nonroad can only load files with 8 characters, so run_codes can be 5 characters at MOST. 
-        #uncomment the scenarios you would like to run. 
-        # contain info on the plant and processing method.
-        # ex) SG_H1 : switch grass, harvest operations first year.
-        run_codes = [
-#                     'SG_H1','SG_H2','SG_H3','SG_H4','SG_H5','SG_H6','SG_H7','SG_H8','SG_H9','SG_H10',
-#                     'SG_N1','SG_N2','SG_N3','SG_N4','SG_N5','SG_N6','SG_N7','SG_N8','SG_N9','SG_N10',
-#                     'SG_T1','SG_T2','SG_T3','SG_T4','SG_T5','SG_T6','SG_T7','SG_T8','SG_T9','SG_T10',
-#                     'FR',
-                     'CS_RT','CS_NT',
-#                     'WS_RT','WS_NT',
-#                     'CG_CH','CG_CN',
-#                     'CG_RH','CG_RN',
-#                     'CG_NH','CG_NN',
-#                     'CG_ID','CG_IL',
-#                     'CG_IC','CG_IG'
-                    ]
+    '''
+    Make sure the program is less then 8 characters.
+    @param title: Title of the program.
+    '''
+    def _addTitle(self, title):
+        assert len(title) <= 8
+        return title
         
-        #scenario title cannot contain spaces and must start with a letter.
-        #scenario title cannot be a run_code title 
-        #scenario title cannot be more than 8 characters
-        #               '--------'
-        modelRunTitle = 'new'
-        runNRRuns = True
-#---------------------------------------------------------------------------------------------------------------------        
-        
-        
+    '''
+    Set up the NONROAD program by creating option, allocation, and population files.
+    Also creates batch files to run.
+    @attention: maybe should make episodeYear to be a global variable in this class instead of Options.
+    '''    
+    def setupNONROAD(self):
         #initialize objects
-        scenario = Opt.ScenarioOptions(modelRunTitle)
-        scenario.initialize(modelRunTitle, run_codes)
-        alo = Alo.Allocate(scenario)
+        scenario = Opt.ScenarioOptions(self.cont)
+        alo = Alo.Allocate(self.cont)
+        # create master batch file
+        self.batch.scenarioBatchFile = open(self.batch.masterPath, 'w')
         
-        
-        if runNRRuns:
-            # go to each run code.
-            for run_code in run_codes:
-                
-                print run_code
-                #query database for appropriate production data based on run_code:
-                # fips, state, productions 
-                scenario.getData(run_code)
-                   
-                #initialize variables
-                state = scenario.data[0][1]
-                fips_prior = str(scenario.data[0][0])
-                
+        # go to each run code.
+        for run_code in self.run_codes:
+            
+            print run_code
+            #query database for appropriate production data based on run_code:
+            # fips, state, productions 
+            # @attention: should this return the data?
+            scenario.getData(run_code)
+               
+            #initialize variables
+            state = scenario.data[0][1]
+            fips_prior = str(scenario.data[0][0])
+            
             #New population object created for each run_code  
             # Pop is the abstract class and .<type> is the concrete class.  
-                if run_code.startswith('CG_I'): pop = Pop.CornGrainIrrigationPop(scenario, alo)
-                elif run_code.startswith('SG'): pop = Pop.SwitchgrassPop(scenario)
-                elif run_code.startswith('FR'): pop = Pop.ForestPop(scenario)
-                elif run_code.startswith('CS'): pop = Pop.ResiduePop(scenario)
-                elif run_code.startswith('WS'): pop = Pop.ResiduePop(scenario)    
-                elif run_code.startswith('CG'): pop = Pop.CornGrainPop(scenario)
-                
-                alo.initializeAloFile(state, run_code)
-                pop.initializePop(scenario.data[0])
-                scenario.initializeBatch()
-                
-                # go through each row of the data table.
-                for dat in scenario.data:
-                    fips = str(dat[0])
-                    '''
-                    The db table is ordered alphabetically.
-                    The search will look through a state. When the state changes in the table,
-                    then the loop will go to the else, closing the old files. and initializing new files.
-                    '''              
-                    if dat[1] == state:
-                        indicator = dat[2]
-                        alo.writeIndicator(fips, indicator)
-                        pop.append_Pop(fips, dat)
-                    # last time through a state, will close different files, and start new ones.
-                    else:
-            #write *.opt file, close allocation file, close *.pop file            
-                        Opt.NROptionFile(scenario, alo, state, fips_prior)
-                        alo.writeSumAndClose(fips_prior)
-                        pop.finishPop()
-                        scenario.appendBatch(state)
-                        
-    #                    print fips_prior, state
+            if run_code.startswith('CG_I'): pop = Pop.CornGrainIrrigationPop(self.cont, scenario.episodeYear, run_code, alo.inicatorTotal)
+            elif run_code.startswith('SG'): pop = Pop.SwitchgrassPop(self.cont, scenario.episodeYear, run_code)
+            elif run_code.startswith('FR'): pop = Pop.ForestPop(self.cont, scenario.episodeYear, run_code)
+            elif run_code.startswith('CS'): pop = Pop.ResiduePop(self.cont, scenario.episodeYear, run_code)
+            elif run_code.startswith('WS'): pop = Pop.ResiduePop(self.cont, scenario.episodeYear, run_code)    
+            elif run_code.startswith('CG'): pop = Pop.CornGrainPop(self.cont, scenario.episodeYear, run_code)
             
-                        fips_prior = fips
-                        state = dat[1]   
+            # is it possible to instantiate new classes each time?
+            alo.initializeAloFile(state, run_code, scenario.episodeYear)
+            pop.initializePop(scenario.data[0])
+            self.batch.initialize(run_code)
             
-            #initialize new pop and allocation files.                      
-                        alo.initializeAloFile(state, run_code)
-                        pop.initializePop(dat)
-                        indicator = dat[2]
-                        alo.writeIndicator(fips, indicator)
-                        pop.append_Pop(fips, dat)            
-                     
+            # go through each row of the data table.
+            for dat in scenario.data:
+                fips = str(dat[0])
+                '''
+                The db table is ordered alphabetically.
+                The search will look through a state. When the state changes in the table,
+                then the loop will go to the else, closing the old files. and initializing new files.
+                '''              
+                if dat[1] == state:
+                    indicator = dat[2]
+                    alo.writeIndicator(fips, indicator)
+                    pop.append_Pop(fips, dat)
+                # last time through a state, will close different files, and start new ones.
+                else:
+                    #write *.opt file, close allocation file, close *.pop file            
+                    Opt.NROptionFile(self.cont, state, fips_prior, run_code, scenario.episodeYear)
+                    alo.writeSumAndClose(fips_prior)
+                    pop.finishPop()
+                    self.batch.append(state, run_code)
+                    
+#                    print fips_prior, state
+        
+                    fips_prior = fips
+                    state = dat[1]   
+        
+                    #initialize new pop and allocation files.                      
+                    alo.initializeAloFile(state, run_code, scenario.episodeYear)
+                    pop.initializePop(dat)
+                    indicator = dat[2]
+                    alo.writeIndicator(fips, indicator)
+                    pop.append_Pop(fips, dat)            
+                 
             #close allocation files    
-                Opt.NROptionFile(scenario, alo, state, fips)        
-                alo.writeSumAndClose(fips_prior)
-                pop.finishPop()
-                scenario.appendBatch(state)
-                scenario.finishBatch()
-            
-            #close scenariobatchfile
-            scenario.scenarioBatchFile.close()
-            
-    #----------------------------------------------  
-            #call BATCH file here
-            p = Popen(scenario.path+'opt/'+modelRunTitle+'.bat')
-            #write values to a file to record assumptions. 
-            #wait for batch file to complete 
-            p.wait()            
-    #----------------------------------------------        
-
-
-
-
-#----------------------------------------------
-        #the following commands create and populate the schema with the emissions inventory.
-#----------------------------------------------        
-        #initialize database objects   
+            Opt.NROptionFile(self.cont, state, fips_prior, run_code, scenario.episodeYear)        
+            alo.writeSumAndClose(fips_prior)
+            pop.finishPop()
+            self.batch.append(state, run_code)
+            self.batch.finish(run_code)
         
-        Fert = Fertilizer.Fertilizer(modelRunTitle) 
-        Chem = Chemical.Chemical(modelRunTitle)
-        Comb = CombustionEmissions.CombustionEmissions(modelRunTitle)
-        Update = UpdateDatabase.UpdateDatabase(modelRunTitle)
-        FugDust = FugitiveDust.FugitiveDust(modelRunTitle)
-        NEI = NEIComparison.NEIComparison(modelRunTitle)
+        #close scenariobatchfile
+        self.batch.scenarioBatchFile.close()
+        # save path for running batch files.
+        self.path = scenario.path
+     
+    '''
+    Run the NONROAD program by opening the batch files.
+    '''   
+    def runNONROAD(self):
+        self.batch.run() 
         
-  
-  
+    '''
+    Create and populate the schema with the emissions inventory.   
+    '''
+    def saveData(self):
+        # initialize database objects
+        Fert = Fertilizer.Fertilizer(self.cont) 
+        Chem = Chemical.Chemical(self.cont)
+        Comb = CombustionEmissions.CombustionEmissions(self.cont)
+        Update = UpdateDatabase.UpdateDatabase(self.cont)
+        FugDust = FugitiveDust.FugitiveDust(self.cont)
+        NEI = NEIComparison.NEIComparison(self.cont)
+        
         # get feedstocks from the run_codes
         feedstockList = []
-        for run_code in run_codes:
+        for run_code in self.run_codes:
             if run_code[0:2] in feedstockList:
                 pass
             else:
                 feedstockList.append(run_code[0:2])
         
-        
-#----------------------------------------------------------------
+    #----------------------------------------------------------------
         #Create tables, Populate Fertilizer & Chemical tables.  
         for feedstock in feedstockList:
             Update.createTables(feedstock)
             Fert.setFertilizer(feedstock)
             Chem.setChemical(feedstock)
             print "Fertilizer and Chemical complete for " + feedstock
-#----------------------------------------------------------------
+    #----------------------------------------------------------------
         
         
-#----------------------------------------------------------------    
+    #----------------------------------------------------------------    
         #Populate Combustion Emissions Tables
         print "Populating tables with combustion emissions..."
-        Comb.populateTables(run_codes, modelRunTitle)
+        Comb.populateTables(self.run_codes, self.modelRunTitle)
         print "...COMPLETED populating tables with combustion emissions."
-#----------------------------------------------------------------
+    #----------------------------------------------------------------
         
         
-#----------------------------------------------------------------
+    #----------------------------------------------------------------
         #Fugitive Dust Emissions
         modelSG = False
-        for run_code in run_codes:
+        for run_code in self.run_codes:
             if not run_code.startswith('SG'):
                 FugDust.setEmissions(run_code) 
                 print "Fugitive Dust Emissions complete for " + run_code  
@@ -192,18 +184,15 @@ class Driver:
             #It makes more sense to create fugitive dust emissions using a separate method
             operations = ['Transport', 'Harvest', 'Non-Harvest']
             for operation in operations:
-                sgFugDust = FugitiveDust.SG_FugitiveDust(modelRunTitle, operation)
+                sgFugDust = FugitiveDust.SG_FugitiveDust(self.cont, operation)
                 sgFugDust.setEmissions()
-#----------------------------------------------------------------            
 
-
-
-#only run the following if all feedstocks are being modeled.
+    #only run the following if all feedstocks are being modeled.
         if len(feedstockList) == 5:
     #----------------------------------------------------------------
             #allocate emissions for single pass methodology - see constructor for ability to allocate CG emissions
             print "Allocate single pass emissions between corn stover and wheat straw."
-            SinglePassAllocation.SinglePassAllocation(modelRunTitle)
+            SinglePassAllocation.SinglePassAllocation(self.modelRunTitle)
     #----------------------------------------------------------------
             
             
@@ -224,13 +213,13 @@ class Driver:
             #create graphics and numerical summary 
             
             #Contribution Analysis
-            ContributionFigure.ContributionAnalysis(modelRunTitle)
+            ContributionFigure.ContributionAnalysis(self.modelRunTitle)
             
             #Emissions Per Gallon
-            EmissionsPerGalFigure.EmissionsPerGallon(modelRunTitle)
+            EmissionsPerGalFigure.EmissionsPerGallon(self.modelRunTitle)
             
             #Ratio to NEI
-            ratioNEI = RatioToNEIFigure.RatioToNEIFig(modelRunTitle)
+            ratioNEI = RatioToNEIFigure.RatioToNEIFig(self.modelRunTitle)
             for feedstock in feedstockList:
                 pass
             
@@ -240,23 +229,36 @@ class Driver:
             
             ratioNEI.f.close()
     #----------------------------------------------------------------
-    
-
-
-    #----------------------------------------------------------------
-            #document results
-            # not sure if this dose anything... look over with yimin...
-            query = ["select * from " + scenario.constantsSchema + ".n_fert_ef",
-                     "select * from " + scenario.constantsSchema + ".n_fert_distribution",
-                     "select * from " + scenario.constantsSchema + ".cs_ws_sg_napp",
-                     "select * from " + scenario.constantsSchema + ".cg_napp",
-                     "select * from " + scenario.constantsSchema + ".cg_pest_app_factor"
-                    ]
-            
-            scenario.documentEFs(query);
-            
-    
-    
-    #----------------------------------------------------------------
-            
+                    
         print 'Successful completion of model run.'
+
+
+
+if __name__ == "__main__":    
+    
+    # scenario title.
+    title = 'fullRun'
+    # run codes.
+    run_codes = [
+                     'SG_H1','SG_H2','SG_H3','SG_H4','SG_H5','SG_H6','SG_H7','SG_H8','SG_H9','SG_H10',
+                     'SG_N1','SG_N2','SG_N3','SG_N4','SG_N5','SG_N6','SG_N7','SG_N8','SG_N9','SG_N10',
+                     'SG_T1','SG_T2','SG_T3','SG_T4','SG_T5','SG_T6','SG_T7','SG_T8','SG_T9','SG_T10',
+                     'FR',
+                     'CS_RT','CS_NT',
+                     'WS_RT','WS_NT',
+                     'CG_CH','CG_CN',
+                     'CG_RH','CG_RN',
+                     'CG_NH','CG_NN',
+                     'CG_ID','CG_IL',
+                     'CG_IC','CG_IG'
+                ] 
+    
+    # run program
+    d = Driver(title, run_codes)
+    d.setupNONROAD()
+    #d.runNONROAD()
+    #d.saveData()
+    
+        
+        
+        

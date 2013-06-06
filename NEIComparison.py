@@ -1,14 +1,14 @@
 import Options
 
 class NEIComparison(Options.ScenarioOptions):
-    def __init__(self, modelRunTitle):
-        Options.ScenarioOptions.__init__(self, modelRunTitle)
+    def __init__(self, cont):
+        Options.ScenarioOptions.__init__(self, cont)
         self.documentFile = "NEIComparison"
         
         self.cellulosicAllocation = 0.34
         self.cornGrainAllocation = 0.54
         
-        self.nei_data_by_county = self.constantsSchema + ".nei_data_by_county"
+        self.nei_data_by_county = self.db.constantsSchema + ".nei_data_by_county"
         
         query = """
 CREATE TABLE summedEmissions
@@ -123,7 +123,7 @@ nh3    float);"""
     LEFT JOIN Raw ON raw.fips = dat.fips
     )
     ;""" % ("'"+f+"'", prod, 
-            self.productionSchema +'.'+ feedstock + "_data")
+            self.db.productionSchema +'.'+ feedstock + "_data")
 
 
         elif feedstock == 'CS' or feedstock == 'WS':
@@ -143,7 +143,7 @@ nh3    float);"""
     LEFT JOIN Raw ON raw.fips = dat.fips
     )
     ;""" % ("'"+f+"'", prod, 
-            self.productionSchema +'.'+ feedstock + "_data")    
+            self.db.productionSchema +'.'+ feedstock + "_data")    
     
     
         elif feedstock == 'FR':
@@ -162,7 +162,7 @@ nh3    float);"""
     LEFT JOIN Raw ON raw.fips = dat.fips
     )
     ;""" % ("'"+f+"'", prod, 
-            self.productionSchema +'.'+ feedstock + "_data")            
+            self.db.productionSchema +'.'+ feedstock + "_data")            
 
 
         self.__executeQuery__(query)
@@ -213,7 +213,7 @@ WITH
             (nrel.voc * """+allocation+""") / nei.voc as VOC,
             (nrel.nh3 * """+allocation+""") / nei.nh3 as NH3
 
-    from """+ self.productionSchema +""".cg_data c
+    from """+ self.db.productionSchema +""".cg_data c
 
     LEFT JOIN nrel ON c.fips = nrel.fips
 

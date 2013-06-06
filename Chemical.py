@@ -10,8 +10,8 @@ class Chemical(Options.ScenarioOptions):
     @attention: Only need db parts from OptionsScenario.
     will need schema variabls.
     '''
-    def __init__(self, modelRunTitle):
-        Options.ScenarioOptions.__init__(self, modelRunTitle)
+    def __init__(self, cont):
+        Options.ScenarioOptions.__init__(self, cont)
         self.documentFile = "Chemical"
          
     
@@ -41,7 +41,7 @@ INSERT INTO cg_chem
 
     ('Pesticide Emissions') AS "Description"
 
-    FROM """+self.productionSchema+""".cg_data cg, """ + self.constantsSchema + """.CG_pest_app_factor pest
+    FROM """+self.db.productionSchema+""".cg_data cg, """ + self.db.constantsSchema + """.CG_pest_app_factor pest
 
     WHERE substr(fips, 1, 2) = pest.STFIPS
     )"""
@@ -66,7 +66,7 @@ INSERT INTO sg_chem
      
         ('Establishment Year: quinclorac + Atrazine + 2-4-D-Amine') AS "Description"
 
-        FROM """+self.productionSchema+""".sg_data sg
+        FROM """+self.db.productionSchema+""".sg_data sg
     )"""
         return chemQuery
           

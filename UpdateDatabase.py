@@ -6,21 +6,24 @@ The schema is titled as the name as the scenario title.
 Input run_codes in study and create appropriate tables.
 """
 class UpdateDatabase(Options.ScenarioOptions): 
-    def __init__(self, modelRunTitle):
-        Options.ScenarioOptions.__init__(self, modelRunTitle)
+    
+    '''
+    Create shcema in database to store results.
+    Schema is titled with the model run title.
+    '''
+    def __init__(self, cont):
+        Options.ScenarioOptions.__init__(self, cont)
         self.documentFile = "UpdateDatabase"
-         
-        cur = self.conn.cursor()
-        # create schema, drop schema if it already existed        
-        cur.execute("DROP SCHEMA IF EXISTS %s CASCADE" % (modelRunTitle))
-        cur.execute("CREATE SCHEMA %s" % (modelRunTitle))
-        self.conn.commit()    
         
+        query = '''DROP SCHEMA IF EXISTS %s CASCADE;
+                   CREATE SCHEMA %s;''' % (cont.get('modelRunTitle'), cont.get('modelRunTitle'))
+        self.db.create(query)
         
-
-    def createTables(self, feedstock):
-# create tables (based on feedstock)
-# TODO: Insert Primary Keys  
+    '''
+    Create tables (based on feedstock)
+    @attention: Insert Primary Keys (from Noah)
+    '''
+    def createTables(self, feedstock): 
         query = """
                         CREATE TABLE %s_raw
                         (
@@ -67,3 +70,10 @@ class UpdateDatabase(Options.ScenarioOptions):
                            VOC    float    ,
                            description    text)""" % (feedstock)
             self.__executeQuery__(query)
+            
+    
+    
+    
+    
+    
+    

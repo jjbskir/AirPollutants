@@ -11,9 +11,8 @@ class Allocate(object):
     '''
     @attention: Should only grab important info from scenarioOptions.
     '''
-    def __init__(self, scenarioOptions):
-        self.scenario = scenarioOptions
-        self.path = scenarioOptions.path + 'ALLOCATE/' 
+    def __init__(self, cont):
+        self.path = cont.get('path') + 'ALLOCATE/' 
 
 
     '''
@@ -21,11 +20,10 @@ class Allocate(object):
     @param state: state, used to create unique file name for .alo.
     @param run_code: run_code, used to create unique file name for .alo.
     '''   
-    def initializeAloFile(self, state, run_code):
-        self.episodeYear = self.scenario.episodeYear         
+    def initializeAloFile(self, state, run_code, episodeYear):
+        self.episodeYear = episodeYear         
         self.run_code = run_code
-        self.inicatorTotal = 0.0 
-               
+        self.inicatorTotal = 0.0     
         self.alo_file = open(self.path + state + '_' + run_code+'.alo', 'w')
         lines = """
 ------------------------------------------------------------------------

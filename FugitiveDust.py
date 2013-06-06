@@ -6,8 +6,8 @@ The run code tells you the feedstock, tillage, and operation
 (harvest/non-harvest/irrigation). 
 """
 class FugitiveDust(Options.ScenarioOptions):
-    def __init__(self, modelRunTitle):
-        Options.ScenarioOptions.__init__(self, modelRunTitle)
+    def __init__(self, cont):
+        Options.ScenarioOptions.__init__(self, cont)
         self.documentFile = "FugitiveDust"
         self.pmRatio = 0.20
     
@@ -51,7 +51,7 @@ class FugitiveDust(Options.ScenarioOptions):
                     fug_pm25 = (%s * dat.fed_minus_55 * %s)
                 FROM %s.fr_data dat
                 WHERE (dat.fips = fr.fips)
-            """ % (pmFR, pmFR, self.pmRatio, self.productionSchema)
+            """ % (pmFR, pmFR, self.pmRatio, self.db.productionSchema)
         return query
        
     
@@ -153,7 +153,7 @@ class FugitiveDust(Options.ScenarioOptions):
                               (cr.description ILIKE '%s');                     
                 """ % (pmTransport, tableTill,
                        EF, tableTill, self.pmRatio,
-                       self.productionSchema,
+                       self.db.productionSchema,
                        str("%transport%"),
                        str("%" + tillage + "%")
                        ) 
@@ -171,7 +171,7 @@ class FugitiveDust(Options.ScenarioOptions):
                           (cr.description ILIKE '%s');                     
             """ % (EF, tableTill,
                    EF, tableTill, self.pmRatio,
-                   self.productionSchema,
+                   self.db.productionSchema,
                    str("%" + operation + "%"),
                    str("%" + tillage + "%")
                    )
@@ -213,7 +213,7 @@ class FugitiveDust(Options.ScenarioOptions):
                           (cr.description ILIKE '%s');                     
             """ % (pmTransport, tableTill,
                    EF, tableTill, self.pmRatio,
-                   self.productionSchema,
+                   self.db.productionSchema,
                    str("%transport%"),
                    str("%" + tillage + "%")
                    ) 
@@ -231,7 +231,7 @@ class FugitiveDust(Options.ScenarioOptions):
                           (cr.description ILIKE '%s');                     
             """ % (EF, tableTill,
                    EF, tableTill, self.pmRatio,
-                   self.productionSchema,
+                   self.db.productionSchema,
                    str("%" + operation + "%"),
                    str("%" + tillage + "%")
                    )
@@ -274,7 +274,7 @@ class FugitiveDust(Options.ScenarioOptions):
                           (wr.description ILIKE '%s');                     
             """ % (pmTransport, tableTill,
                    EF, tableTill, self.pmRatio,
-                   self.productionSchema,
+                   self.db.productionSchema,
                    str("%transport%"),
                    str("%" + tillage + "%")
                    ) 
@@ -292,7 +292,7 @@ class FugitiveDust(Options.ScenarioOptions):
                           (wr.description ILIKE '%s');                     
             """ % (EF, tableTill,
                    EF, tableTill, self.pmRatio,
-                   self.productionSchema,
+                   self.db.productionSchema,
                    str("%" + operation + "%"),
                    str("%" + tillage + "%")
                    )
@@ -310,8 +310,8 @@ class FugitiveDust(Options.ScenarioOptions):
 #   --structure is kept in the 'long-hand' format so users may easily change
 #        EF's in the future
 class SG_FugitiveDust(Options.ScenarioOptions):
-    def __init__(self, modelRunTitle, operation):
-        Options.ScenarioOptions.__init__(self, modelRunTitle)
+    def __init__(self, cont, operation):
+        Options.ScenarioOptions.__init__(self, cont)
         self.pmRatio = 0.20
         
         
@@ -378,7 +378,7 @@ class SG_FugitiveDust(Options.ScenarioOptions):
                               (raw.run_code ILIKE '%s');                     
                 """ % (EF, 
                        EF, self.pmRatio,
-                       self.productionSchema,
+                       self.db.productionSchema,
                        str("%" + self.description + str(year+1) + "%")
                        )
             

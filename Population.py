@@ -11,13 +11,13 @@ class Population(object):
       and population to the .pop file. It is defined in each of the feedstockPOP
       classes. 
     """
-    def __init__(self, scenarioOptions):
+    def __init__(self, cont, episodeYear, run_code):
         
-        self.episodeYear = scenarioOptions.episodeYear
+        self.episodeYear = episodeYear
         
-        self.path = scenarioOptions.path + 'POP/'
+        self.path = cont.get('path') + 'POP/'
         
-        self.run_code = scenarioOptions.run_code
+        self.run_code = run_code
 
 #Used in all agricultural feedstocks (i.e. not FR)
         self.activity_tractor = 475.0              # hr / year (NonRoad default value)
@@ -135,8 +135,8 @@ class ResiduePop(Population):
     """
     Calculates equipment populations for corn stover and wheat straw residue collection.
     """
-    def __init__(self, scenarioOptions):
-        Population.__init__(self, scenarioOptions)
+    def __init__(self, cont, episodeYear, run_code):
+        Population.__init__(self, cont, episodeYear, run_code)
 
          
     # calulates the population of combines needed.               
@@ -174,8 +174,8 @@ class ForestPop(Population):
     """
     Calculates equipment populations for forest residue collection.
     """
-    def __init__(self, scenarioOptions):
-        Population.__init__(self, scenarioOptions)
+    def __init__(self, cont, episodeYear, run_code):
+        Population.__init__(self, cont, episodeYear, run_code)
 
 #Forest         
         self.activity_loader = 1276.0              # hr / year (NonRoad default values)
@@ -214,8 +214,8 @@ class ForestPop(Population):
 #-----------------------------------------------------------------------
 class CornGrainPop(Population):   
 
-    def __init__(self, scenarioOptions):
-        Population.__init__(self, scenarioOptions)
+    def __init__(self, cont, episodeYear, run_code):
+        Population.__init__(self, cont, episodeYear, run_code)
        
 #Harvest hours per acre        
         self.transport_tractor = 29.5 * 60 # bu/min * 60 min/hr = bu/hr 
@@ -285,7 +285,21 @@ class CornGrainPop(Population):
 
 
 
+'''
+****************
+**    Note    **
+****************
+I changed the indicator from being part of the class alo,
+to being detatched and only here. Not sure how this will affect it.
+Here is how it was before:
 
+__init__(.., alo):
+    self.alo = alo
+
+then was through out as
+self.alo.inicatorTotal
+
+'''
 #-----------------------------------------------------------------------
 class CornGrainIrrigationPop(Population):   
     """
@@ -306,10 +320,9 @@ class CornGrainIrrigationPop(Population):
         [6] - percent of acres
         [7] - hours per acre (hpa)
     """
-    def __init__(self, scenarioOptions, alo):
-        Population.__init__(self, scenarioOptions)
-
-        self.alo = alo
+    def __init__(self, cont, episodeYear, run_code, inicatorTotal):
+        Population.__init__(self, cont, episodeYear, run_code)
+        self.inicatorTotal = inicatorTotal
     
     '''
     @attention: why does this have a different initialize then from the main Population class?
@@ -336,7 +349,7 @@ class CornGrainIrrigationPop(Population):
         if self.run_code.endswith('G'):     
             hp_array = ['0']*7
             
-            pop = round(self.alo.inicatorTotal * hpa / self.activity_gas,10)            
+            pop = round(self.inicatorTotal * hpa / self.activity_gas,10)            
                 
             if hp < 6: hp_array[0] = pop
             elif hp < 11: hp_array[1] = pop
@@ -366,7 +379,7 @@ class CornGrainIrrigationPop(Population):
         #LPG Irrigation, only one hp range is modeled in Nonroad
         if self.run_code.endswith('L'):
             
-            pop = round(self.alo.inicatorTotal * hpa / self.activity_lpg,10)
+            pop = round(self.inicatorTotal * hpa / self.activity_lpg,10)
             lines = """%s000       %s 2267005060 LPG - Irrigation Sets                      100   175   113  3000  DEFAULT        %s
 """ % (st_fips, self.episodeYear, pop)
     
@@ -375,7 +388,7 @@ class CornGrainIrrigationPop(Population):
         if self.run_code.endswith('C'):
             hp_array = ['0']*6
             
-            pop = round(self.alo.inicatorTotal * hpa / self.activity_cng,10)            
+            pop = round(self.inicatorTotal * hpa / self.activity_cng,10)            
                 
             if hp < 40: hp_array[0] = pop
             elif hp < 75: hp_array[1] = pop
@@ -403,7 +416,7 @@ class CornGrainIrrigationPop(Population):
 
             hp_array = ['0']*11
             
-            pop = round(self.alo.inicatorTotal * hpa / self.activity_diesel,10)            
+            pop = round(self.inicatorTotal * hpa / self.activity_diesel,10)            
                 
             if hp < 11: hp_array[0] = pop
             elif hp < 16: hp_array[1] = pop
@@ -465,8 +478,8 @@ class SwitchgrassPop(Population):
     """
     Calculates equipment populations for a perennial (10 year) switchgrass model run.
     """    
-    def __init__(self, scenarioOptions):
-        Population.__init__(self, scenarioOptions)
+    def __init__(self, cont, episodeYear, run_code):
+        Population.__init__(self, cont, episodeYear, run_code)
         
 
         

@@ -11,8 +11,8 @@ Update database with emissions as well as copy emissions to static files
 for quick debugging and error checking.  
 """
 class CombustionEmissions(Options.ScenarioOptions):
-    def __init__(self, modelRunTitle):
-        Options.ScenarioOptions.__init__(self, modelRunTitle)
+    def __init__(self, cont):
+        Options.ScenarioOptions.__init__(self, cont)
         self.documentFile = "CombustionEmissions"
         self.pmRatio = 0.20
        
@@ -53,8 +53,7 @@ class CombustionEmissions(Options.ScenarioOptions):
             writer.writerow(('FIPS', 'SCC', 'HP', 'FuelCons_gal/yr', 'THC_exh', 'VOC_exh', 'CO_exh', 'NOx_exh',
                             'CO2_exh', 'SO2_exh', 'PM10_exh', 'PM25_exh', 'NH3_exh', 'Description'))
         
-        
-            cur = self.conn.cursor()
+            queries = []
             for cur_file in listing:
                 # use for debugging
 #                print "Current file is: %s -- %s" % (run_code, cur_file)
@@ -94,13 +93,11 @@ class CombustionEmissions(Options.ScenarioOptions):
                         writer.writerow((row[0], SCC, HP, FuelCons, THC, VOC, CO, NOx,
                             CO2, SO2, PM10, PM25, NH3, run_code,))
                         
-                        cur.execute("""INSERT INTO %s.%s_raw (FIPS, SCC, HP, THC, VOC, CO, NOX, CO2, SOx, PM10, PM25, fuel_consumption, NH3, description, run_code) 
-                                               VALUES ('%s', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, '%s', '%s')"""
-                                           % (self.schema, feedstock, row[0], SCC, HP, THC, VOC, CO, NOx, CO2, SO2, PM10, PM25, FuelCons, NH3, description, run_code))
-                    
+                        q = """INSERT INTO %s.%s_raw (FIPS, SCC, HP, THC, VOC, CO, NOX, CO2, SOx, PM10, PM25, fuel_consumption, NH3, description, run_code) 
+                            VALUES ('%s', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, '%s', '%s')""" % (self.db.schema, feedstock, row[0], SCC, HP, THC, VOC, CO, NOx, CO2, SO2, PM10, PM25, FuelCons, NH3, description, run_code)
+                        queries.append(q)
         
-            self.conn.commit()
-            cur.close()
+            self.db.input(queries)
             
             
         print "Finished populating table for " + run_code            

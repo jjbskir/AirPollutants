@@ -10,8 +10,8 @@ class Fertilizer(Options.ScenarioOptions):
     @attention: should seperate db object so that the overhang of the class
     that is not needed, will not be here. 
     '''
-    def __init__(self, modelRunTitle):
-        Options.ScenarioOptions.__init__(self, modelRunTitle)
+    def __init__(self, cont):
+        Options.ScenarioOptions.__init__(self, cont)
         # gets used to save query to a text file for debugging purposes.
         self.documentFile = "Fertilizer"
            
@@ -57,8 +57,8 @@ INSERT INTO """ + feed + """_nfert
 
         'Urea Fertilizer Emissions' AS "Description"
 
-        FROM """ + self.productionSchema + '.' + feed + """_data feed, """ + self.constantsSchema + """.N_fert_EF nfert, 
-        """ + self.constantsSchema + """.CS_WS_SG_Napp N_app, """ + self.constantsSchema + """.n_fert_distribution n_dist
+        FROM """ + self.db.productionSchema + '.' + feed + """_data feed, """ + self.db.constantsSchema + """.N_fert_EF nfert, 
+        """ + self.db.constantsSchema + """.CS_WS_SG_Napp N_app, """ + self.db.constantsSchema + """.n_fert_distribution n_dist
 
         GROUP BY feed.fips, 
         nfert.nox_ur, nfert.nox_nsol, nfert.nox_as, nfert.nox_an, nfert.nox_aa,
@@ -81,8 +81,8 @@ INSERT INTO """ + feed + """_nfert
 
         'Nitrogen Solutions Fertilizer Emissions' AS "Description"
 
-        FROM """ + self.productionSchema + '.' + feed + """_data feed, """ + self.constantsSchema + """.N_fert_EF nfert, 
-        """ + self.constantsSchema + """.CS_WS_SG_Napp N_app, """ + self.constantsSchema + """.n_fert_distribution n_dist
+        FROM """ + self.db.productionSchema + '.' + feed + """_data feed, """ + self.db.constantsSchema + """.N_fert_EF nfert, 
+        """ + self.db.constantsSchema + """.CS_WS_SG_Napp N_app, """ + self.db.constantsSchema + """.n_fert_distribution n_dist
 
         GROUP BY feed.fips, 
         nfert.nox_ur, nfert.nox_nsol, nfert.nox_as, nfert.nox_an, nfert.nox_aa,
@@ -105,8 +105,8 @@ INSERT INTO """ + feed + """_nfert
 
         'Anhydrous Ammonia Fertilizer Emissions' AS "Description"
 
-        FROM """ + self.productionSchema + '.' + feed + """_data feed, """ + self.constantsSchema + """.N_fert_EF nfert, 
-        """ + self.constantsSchema + """.CS_WS_SG_Napp N_app, """ + self.constantsSchema + """.n_fert_distribution n_dist
+        FROM """ + self.db.productionSchema + '.' + feed + """_data feed, """ + self.db.constantsSchema + """.N_fert_EF nfert, 
+        """ + self.db.constantsSchema + """.CS_WS_SG_Napp N_app, """ + self.db.constantsSchema + """.n_fert_distribution n_dist
 
         GROUP BY feed.fips, 
         nfert.nox_ur, nfert.nox_nsol, nfert.nox_as, nfert.nox_an, nfert.nox_aa,
@@ -129,8 +129,8 @@ INSERT INTO """ + feed + """_nfert
 
         'Ammonium Nitrate Fertilizer Emissions' AS "Description"
 
-        FROM """ + self.productionSchema + '.' + feed + """_data feed, """ + self.constantsSchema + """.N_fert_EF nfert, 
-        """ + self.constantsSchema + """.CS_WS_SG_Napp N_app, """ + self.constantsSchema + """.n_fert_distribution n_dist
+        FROM """ + self.db.productionSchema + '.' + feed + """_data feed, """ + self.db.constantsSchema + """.N_fert_EF nfert, 
+        """ + self.db.constantsSchema + """.CS_WS_SG_Napp N_app, """ + self.db.constantsSchema + """.n_fert_distribution n_dist
 
         GROUP BY feed.fips, 
         nfert.nox_ur, nfert.nox_nsol, nfert.nox_as, nfert.nox_an, nfert.nox_aa,
@@ -153,8 +153,8 @@ INSERT INTO """ + feed + """_nfert
 
         'Ammonium Sulfate Fertilizer Emissions' AS "Description"
 
-        FROM """ + self.productionSchema + '.' + feed + """_data feed, """ + self.constantsSchema + """.N_fert_EF nfert, 
-        """ + self.constantsSchema + """.CS_WS_SG_Napp N_app, """ + self.constantsSchema + """.n_fert_distribution n_dist
+        FROM """ + self.db.productionSchema + '.' + feed + """_data feed, """ + self.db.constantsSchema + """.N_fert_EF nfert, 
+        """ + self.db.constantsSchema + """.CS_WS_SG_Napp N_app, """ + self.db.constantsSchema + """.n_fert_distribution n_dist
 
         GROUP BY feed.fips, 
         nfert.nox_ur, nfert.nox_nsol, nfert.nox_as, nfert.nox_an, nfert.nox_aa,
@@ -188,7 +188,7 @@ INSERT INTO sg_nfert
 
         'Nitrogen Solutions Fertilizer Emissions' AS "Description"
 
-    FROM  """ + self.productionSchema + """.sg_data sg, """ + self.constantsSchema + """.N_fert_EF nfert, """ + self.constantsSchema + """.CS_WS_SG_Napp N_app
+    FROM  """ + self.db.productionSchema + """.sg_data sg, """ + self.db.constantsSchema + """.N_fert_EF nfert, """ + self.db.constantsSchema + """.CS_WS_SG_Napp N_app
 
     GROUP BY sg.fips, sg.prod,
     nfert.nox_nsol, nfert.nh3_nsol, N_app.SG
@@ -219,8 +219,8 @@ INSERT INTO cg_nfert
 
         'Urea Fertilizer Emissions' AS "Description"
 
-        FROM """ + self.constantsSchema + """.cg_napp n, """ + self.constantsSchema + """.N_fert_EF nfert, 
-        """ + self.productionSchema + """.cg_data cd, """ + self.constantsSchema + """.n_fert_distribution n_dist
+        FROM """ + self.db.constantsSchema + """.cg_napp n, """ + self.db.constantsSchema + """.N_fert_EF nfert, 
+        """ + self.db.productionSchema + """.cg_data cd, """ + self.db.constantsSchema + """.n_fert_distribution n_dist
 
         WHERE n.fips = cd.fips 
 
@@ -248,8 +248,8 @@ INSERT INTO cg_nfert
 
         'Nitrogen Solutions Fertilizer Emissions' AS "Description"
 
-        FROM """ + self.constantsSchema + """.cg_napp n, """ + self.constantsSchema + """.N_fert_EF nfert,
-        """ + self.productionSchema + """.cg_data cd, """ + self.constantsSchema + """.n_fert_distribution n_dist
+        FROM """ + self.db.constantsSchema + """.cg_napp n, """ + self.db.constantsSchema + """.N_fert_EF nfert,
+        """ + self.db.productionSchema + """.cg_data cd, """ + self.db.constantsSchema + """.n_fert_distribution n_dist
 
         WHERE n.fips = cd.fips 
 
@@ -277,8 +277,8 @@ INSERT INTO cg_nfert
 
         'Anhydrous Ammonia Fertilizer Emissions' AS "Description"
 
-        FROM """ + self.constantsSchema + """.cg_napp n, """ + self.constantsSchema + """.N_fert_EF nfert,
-        """ + self.productionSchema + """.cg_data cd, """ + self.constantsSchema + """.n_fert_distribution n_dist
+        FROM """ + self.db.constantsSchema + """.cg_napp n, """ + self.db.constantsSchema + """.N_fert_EF nfert,
+        """ + self.db.productionSchema + """.cg_data cd, """ + self.db.constantsSchema + """.n_fert_distribution n_dist
 
         WHERE n.fips = cd.fips 
 
@@ -306,8 +306,8 @@ INSERT INTO cg_nfert
 
         'Ammonium Nitrate Fertilizer Emissions' AS "Description"
 
-        FROM """ + self.constantsSchema + """.cg_napp n, """ + self.constantsSchema + """.N_fert_EF nfert,
-        """ + self.productionSchema + """.cg_data cd, """ + self.constantsSchema + """.n_fert_distribution n_dist
+        FROM """ + self.db.constantsSchema + """.cg_napp n, """ + self.db.constantsSchema + """.N_fert_EF nfert,
+        """ + self.db.productionSchema + """.cg_data cd, """ + self.db.constantsSchema + """.n_fert_distribution n_dist
 
         WHERE n.fips = cd.fips 
 
@@ -335,8 +335,8 @@ INSERT INTO cg_nfert
 
         'Ammonium Sulfate Fertilizer Emissions' AS "Description"
 
-        FROM """ + self.constantsSchema + """.cg_napp n, """ + self.constantsSchema + """.N_fert_EF nfert,
-        """ + self.productionSchema + """.cg_data cd, """ + self.constantsSchema + """.n_fert_distribution n_dist
+        FROM """ + self.db.constantsSchema + """.cg_napp n, """ + self.db.constantsSchema + """.N_fert_EF nfert,
+        """ + self.db.productionSchema + """.cg_data cd, """ + self.db.constantsSchema + """.n_fert_distribution n_dist
 
         WHERE n.fips = cd.fips 
 

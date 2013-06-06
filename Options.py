@@ -1,33 +1,51 @@
 import os
-import psycopg2 as db
+import Database as db
+import QueryRecorder as qr
 
-'''
-Should try to serate out DOS and datatabase actions into their own classes.
-Try to consolidate the info that gets passed to other classes into a array.
-'''
+"""
+The ScenarioOptions object is used to query production (harvested acres and production) from a database. 
+It also contains other useful information such as a scenario title, path to write outputs, and the year
+of interest for the data inputs. 
+Can be broken into segments of datbase and DOS batching.
+Creates the option input files for NONROAD.
+"""
 class ScenarioOptions:
-    """
-    The 'ScenarioOptions' object is used to query production (harvested acres and production) from a database. 
-    It also contains other useful information such as a scenario title, path to write outputs, and the year
-     of interest for the data inputs. 
-    """
-    def __init__(self, modelRunTitle):
-        #credentials for connecting to the database -- superuser
-        self.conn = db.connect("dbname=biofuel user=nfisher password=nfisher")
-        # schema name for production data
-        self.productionSchema = 'BTS2dat_55'
-        # schema name for stored constants (n application rates, n distribution, nei data, etc...)
-        self.constantsSchema = 'constantvals'        
-        # schema name for the scenario
-        self.schema = modelRunTitle
+
+    def __init__(self, cont):
+        # database
+        self.db = db.Database(cont.get('modelRunTitle'))
+        # query recorder.
+        self.qr = qr.QueryRecorder(cont.get('path'))
         # title of scenario. 
-        self.modelRunTitle = modelRunTitle
+        self.modelRunTitle = cont.get('modelRunTitle')
+        # run codes
+        self.run_codes = cont.get('run_codes')
         # directory option file is saved to. Uses run title.
-        self.path = 'C:/Nonroad/%s/' % (self.modelRunTitle)  # non-dev directory
-        # used to create a text file to save sql queries the first time through.
-        self.isQuery = False
+        self.path = cont.get('path')  # non-dev directory
+        # break flag used to ensure switchgrass database query only happens once. (all other feedstocks need multiple pulls from the database).
+        self.querySG = True
         self.documentFile = "Options"
-        
+        self._createDir()
+
+    '''
+    Initialize the class by setting up file directory to store data.
+    Also creates the batch file to store data.
+    '''   
+    def _createDir(self):        
+        if os.path.exists(self.path):
+            # path already exists
+            pass
+        else:
+            # path does not exist
+            os.makedirs(self.path)       
+            os.makedirs(self.path + "ALLOCATE/")
+            os.makedirs(self.path + "POP/")
+            os.makedirs(self.path + "OPT/")
+            os.makedirs(self.path + "OUT/")
+            os.makedirs(self.path + "FIGURES/")
+            os.makedirs(self.path + "QUERIES/")
+
+    
     '''
     used to execute a sql query that inserts data into the databse.
     uses isQuery to create a text file for the sql queries to be recorded. Only occurs during first query.
@@ -35,140 +53,39 @@ class ScenarioOptions:
     @attention: remove self.docFile and make private. 
     Used in different way here and indocumentEFs 
     '''
-    def __executeQuery__(self, query):   
-        
-        if not self.isQuery:
-            self.docFile = open(self.path + "QUERIES/" + self.documentFile+".sql",'w')
-            self.isQuery = True
-            
-        self.__documentQuery__(query) 
-        print query    
-        
-        cur = self.conn.cursor()
-        cur.execute("SET search_path to %s" % (self.schema))
-        cur.execute(query)
-        cur.close()
-        self.conn.commit()
-        
-    '''
-    Document a query by writing it to a text file.
-    @param query: sql query to be recorded. 
-    '''
-    def __documentQuery__(self, query):
-        self.docFile.write(query)
+    def __executeQuery__(self, query):  
+        self.qr.documentQuery(self.documentFile, query)   
+        print query     
+        self.db.input(query)
     
     '''
     Executes query and records it to database. Should be emmission final? from constants though.
     @param query: sql query for selecting and recording.
-    @attention: remove self.docFile and make private. 
-    Nothing actually is written in this text file...
     '''        
     def documentEFs(self, query):
-        self.docFile = open(self.path + "QUERIES/Emission Factors.txt",'w')
+        fileName = 'Emission Factors'
         for q in query: 
-            cur = self.conn.cursor()
-            cur.execute(q)
-            data =  cur.fetchall
-            print data
-            self.__documentQuery__(data)
-            
-    '''
-    Initialize the class by giving it important data.
-    @param modelRunTitle: scenario title and the directory the scenario gets saved into.
-    @param run_codes: all of the run codes used in the scenario. 
-    '''   
-    def initialize(self, modelRunTitle, run_codes):
-        
-        self.run_codes = run_codes
-        
-        # schema title for future emissions inventory
-        self.modelRunTitle = modelRunTitle 
-        self.schema = modelRunTitle
-        
-        
-        if os.path.exists(self.path):
-            # path already exists
-            pass
-        else:
-            # path does not exist
-            os.makedirs(self.path)
-                   
-            os.makedirs(self.path + "ALLOCATE/")
-            os.makedirs(self.path + "POP/")
-            os.makedirs(self.path + "OPT/")
-            os.makedirs(self.path + "OUT/")
-            os.makedirs(self.path + "FIGURES/")
-            os.makedirs(self.path + "QUERIES/")
-      
-        # break flag used to ensure switchgrass database query only happens once. (all other feedstocks need multiple pulls from the database).
-        self.querySG = True
-                
-        # create scenario level batch file
-        self.scenarioBatchFile = open(self.path + 'OPT/' + self.modelRunTitle + '.bat', 'w')
-
-
-
-
-        
-    # Create Batch File for each run_code                
-    def initializeBatch(self):
-        self.scenarioBatchFile.write('\n')
-        self.batchFile = open(self.path + 'OPT/' + self.run_code + '.bat', 'w')
-        self.batchFile.write("cd C:\\NonRoad\n")
-
-        self.batchPath = self.path + 'OPT/'    
-        self.batchPath = self.batchPath.replace('/', '\\')
-
-
-
-    
-    
-    '''
-    dd states to the batch file
-    @param state: state the batch file is running.
-    to run a batch file in DOS for this model, type:
-    >NONROAD.exe C:\\NONROAD\\NewModel\\OPT\\<run_code>\\<option_file.opt>
-    '''
-    def appendBatch(self, state):
-        lines = "NONROAD.exe " + self.batchPath + self.run_code + '\\' + state + ".opt\n"
-        self.batchFile.writelines(lines)
-
-
-
-
-
-    # finish the batch file and add the finished batch file to the full 'Scenario' batch file 
-    def finishBatch(self):
-        self.batchFile.close()        
-        self.scenarioBatchFile.write("CALL " + "\"" + self.batchPath + self.run_code + '.bat\"\n')
-        
-        
-        
-        
+            data = self.db.output(q, self.db.constantsSchema)
+            self.qr.documentQuery(fileName, data)     
         
     '''
     Grabs data from the database.
     @param run_code: code to change the current scenario.
-    @attention: getQuery should return the query, and pass it to getProdData
-    as a variable. 
     '''   
     def getData(self, run_code):
+        # keep track of current run code.
         self.run_code = run_code
-        
         # model all years as 2022 except corn grain = 2011
         if run_code.startswith('CG'): self.episodeYear = '2011'
         else: self.episodeYear = '2022' 
-        
         # query the data and collect it.            
-        self.__getQuery__()
-        self.__getProdData__()
-       
-
+        query = self._getQuery(run_code)
+        if query:
+            self.data = self._getProdData(query)
         # create output directories
         if os.path.exists(self.path + '/OUT/' + run_code):
             # path already exists, existing data will be replaced. 
             pass
-    
         else:
             # path does not exist
             os.makedirs(self.path + '/OPT/' + run_code)
@@ -176,61 +93,51 @@ class ScenarioOptions:
                    
                   
                   
-    # execute the sql statments constructed in __getQuery__.               
-    def __getProdData__(self):      
-            
-        cur = self.conn.cursor()
-        
-        cur.execute("SET search_path TO %s" % (self.productionSchema))           
-        # extract data
-        cur.execute(self.query)
-    
-        self.data = list(cur.fetchall())
-        
-        cur.close()
-        
-        
-        
-        # the number of extracted data must be 3109 with no null (blank) returned results.  
-#        print len(self.data)
-
- 
+    '''
+    execute the sql statments constructed in _getQuery.
+    @param query: query to be recorded. 
+    '''               
+    def _getProdData(self, query):
+        # the number of extracted data must be 3109 with no null (blank) returned results.        
+        return self.db.output(query, self.db.productionSchema)
  
  
     '''
     query database for appropriate production data based on run_code
-    @attention: Is this if structure the best way to do it? 
+    @param run_code: current run code to know what data to query from the db. 
+    @return: query to be executed.
     '''            
-    def __getQuery__(self):
+    def _getQuery(self, run_code):
+        query = None
         # corn grain.
-        if self.run_code.startswith('CG'):
+        if run_code.startswith('CG'):
             
             # query conventional till data. For specific state and county.
-            if self.run_code.startswith('CG_C'):
-                self.query = """select ca.fips, ca.st, dat.convtill_harv_ac, dat.convtill_prod, dat.convtill_yield
-                from cg_data dat, """ + self.constantsSchema + """.county_attributes ca where dat.fips = ca.fips order by ca.fips asc"""
+            if run_code.startswith('CG_C'):
+                query = """select ca.fips, ca.st, dat.convtill_harv_ac, dat.convtill_prod, dat.convtill_yield
+                from cg_data dat, """ + self.db.constantsSchema + """.county_attributes ca where dat.fips = ca.fips order by ca.fips asc"""
              
             # query reduced till.
-            elif self.run_code.startswith('CG_R'):
-                self.query = """select ca.fips, ca.st, dat.reducedtill_harv_ac, dat.reducedtill_prod, dat.reducedtill_yield
-                from cg_data dat, """ + self.constantsSchema + """.county_attributes ca where dat.fips = ca.fips order by ca.fips asc"""
+            elif run_code.startswith('CG_R'):
+                query = """select ca.fips, ca.st, dat.reducedtill_harv_ac, dat.reducedtill_prod, dat.reducedtill_yield
+                from cg_data dat, """ + self.db.constantsSchema + """.county_attributes ca where dat.fips = ca.fips order by ca.fips asc"""
             
             # query no till data.
-            elif self.run_code.startswith('CG_N'):
-                self.query = """select ca.fips, ca.st, dat.notill_harv_ac, dat.notill_prod, dat.notill_yield 
-                from cg_data dat, """ + self.constantsSchema + """.county_attributes ca where dat.fips = ca.fips order by ca.fips asc"""
+            elif run_code.startswith('CG_N'):
+                query = """select ca.fips, ca.st, dat.notill_harv_ac, dat.notill_prod, dat.notill_yield 
+                from cg_data dat, """ + self.db.constantsSchema + """.county_attributes ca where dat.fips = ca.fips order by ca.fips asc"""
             
             # grab data for irrigation.  
-            elif self.run_code.startswith('CG_I'):
+            elif run_code.startswith('CG_I'):
                 
-                if self.run_code.endswith('D'): fuel_type = 'A'
-                elif self.run_code.endswith('G'): fuel_type = 'B'
-                elif self.run_code.endswith('L'): fuel_type = 'C'
-                elif self.run_code.endswith('C'): fuel_type = 'D'
+                if run_code.endswith('D'): fuel_type = 'A'
+                elif run_code.endswith('G'): fuel_type = 'B'
+                elif run_code.endswith('L'): fuel_type = 'C'
+                elif run_code.endswith('C'): fuel_type = 'D'
                 # %s is a place holder for variables listed at the end of the sql query in the ().
                 # subprocess (WITH statment) is querried in the constant cg_irrigated_states. gets data for different
                 # vehicles and their attributes (fuel, horse power.)
-                self.query = """
+                query = """
                 Set search_path to %s; 
                 WITH
                     IRR AS (
@@ -253,48 +160,49 @@ class ScenarioOptions:
                         irr.fuel, irr.hp, irr.perc, irr.hpa
                         
                             from county_attributes ca
-                            left join %s.cdata dat on ca.fips = dat.fips
+                            left join %s.cg_data dat on ca.fips = dat.fips
                             left join irr on irr.state ilike ca.st
                             
                             where ca.st ilike irr.state
                             order by ca.fips asc
-                    """ % (self.constantsSchema, fuel_type, fuel_type, fuel_type, fuel_type, self.productionSchema)
+                    """ % (self.db.constantsSchema, fuel_type, fuel_type, fuel_type, fuel_type, self.db.productionSchema)
     
     
                
                   
-        elif self.run_code.startswith('CS'):
+        elif run_code.startswith('CS'):
             
-            if self.run_code == 'CS_RT':
-                self.query = """select ca.fips, ca.st, dat.reducedtill_harv_ac, dat.reducedtill_prod, dat.reducedtill_yield
-                from cs_data dat, """ + self.constantsSchema + """.county_attributes ca where dat.fips = ca.fips order by ca.fips asc"""
+            if run_code == 'CS_RT':
+                query = """select ca.fips, ca.st, dat.reducedtill_harv_ac, dat.reducedtill_prod, dat.reducedtill_yield
+                from cs_data dat, """ + self.db.constantsSchema + """.county_attributes ca where dat.fips = ca.fips order by ca.fips asc"""
             
-            elif self.run_code == 'CS_NT':
-                self.query = """select ca.fips, ca.st, dat.notill_harv_ac, dat.notill_prod, dat.notill_yield 
-                from cs_data dat, """ + self.constantsSchema + """.county_attributes ca where dat.fips = ca.fips  order by ca.fips asc"""
+            elif run_code == 'CS_NT':
+                query = """select ca.fips, ca.st, dat.notill_harv_ac, dat.notill_prod, dat.notill_yield 
+                from cs_data dat, """ + self.db.constantsSchema + """.county_attributes ca where dat.fips = ca.fips  order by ca.fips asc"""
                 
           
           
                          
-        elif self.run_code.startswith('WS'):
+        elif run_code.startswith('WS'):
+            # what is this var used for?
             self.queryTable = 'ws_data'
 
-            if self.run_code == 'WS_RT':
-                self.query = """select ca.fips, ca.st, dat.reducedtill_harv_ac, dat.reducedtill_prod, dat.reducedtill_yield
-                from ws_data dat, """ + self.constantsSchema + """.county_attributes ca where dat.fips = ca.fips order by ca.fips asc"""
+            if run_code == 'WS_RT':
+                query = """select ca.fips, ca.st, dat.reducedtill_harv_ac, dat.reducedtill_prod, dat.reducedtill_yield
+                from ws_data dat, """ + self.db.constantsSchema + """.county_attributes ca where dat.fips = ca.fips order by ca.fips asc"""
             
-            elif self.run_code == 'WS_NT':
-                self.query = """select ca.fips, ca.st, dat.notill_harv_ac, dat.notill_prod, dat.notill_yield 
-                from ws_data dat, """ + self.constantsSchema + """.county_attributes ca where dat.fips = ca.fips  order by ca.fips asc"""
+            elif run_code == 'WS_NT':
+                query = """select ca.fips, ca.st, dat.notill_harv_ac, dat.notill_prod, dat.notill_yield 
+                from ws_data dat, """ + self.db.constantsSchema + """.county_attributes ca where dat.fips = ca.fips  order by ca.fips asc"""
         
         
                 
                  
-        elif self.run_code.startswith('SG'):
+        elif run_code.startswith('SG'):
             
             if self.querySG:
-                self.query = """select ca.fips, ca.st, dat.harv_ac, dat.prod
-                from sg_data dat, """ + self.constantsSchema + """.county_attributes ca where dat.fips = ca.fips order by ca.fips asc"""
+                query = """select ca.fips, ca.st, dat.harv_ac, dat.prod
+                from sg_data dat, """ + self.db.constantsSchema + """.county_attributes ca where dat.fips = ca.fips order by ca.fips asc"""
                 
                 # we have 30 scenarios for SG to run, but only want one to query the database once
                 self.querySG = False
@@ -302,12 +210,13 @@ class ScenarioOptions:
          
          
             
-        elif self.run_code.startswith('FR'):
+        elif run_code.startswith('FR'):
             
-            if self.run_code == 'FR':
-                self.query = """select ca.fips, ca.st, dat.fed_minus_55 
-                from """ + self.constantsSchema + """.county_attributes ca, fr_data dat where dat.fips = ca.fips"""
-
+            if run_code == 'FR':
+                query = """select ca.fips, ca.st, dat.fed_minus_55 
+                from """ + self.db.constantsSchema + """.county_attributes ca, fr_data dat where dat.fips = ca.fips"""
+        
+        return query
 
 
 
@@ -321,38 +230,39 @@ Used to create the .opt file for the NONROAD model to run.
 by just taking the needed variables and storing them in a array.
 '''
 class NROptionFile:
-    """
-    The 'NROptionFile' class is used to creat .opt files to run the Nonroad program. 
-    """
 
-    def __init__(self, scenarioOptions, allocate, state, fips):
-        
-        self.run_code = scenarioOptions.run_code
+    '''
+    Grab important data to be put into the .opt files.
+    @param state: state for file.
+    @param fips: fips number, which tells you what county you are in. 
+    @attention: there was a parameter 'allocate' that i removed from init.
+    '''
+    def __init__(self, cont, state, fips, run_code, episodeYear):
+        # run code.
+        self.run_code = run_code
         # path to the .opt file that is saved.
-        self.path = scenarioOptions.path + 'OPT/' + scenarioOptions.run_code + '/'
-        
-        self.outPathNR = self.path.replace('/', '\\')
-        self.outPathPopAlo = scenarioOptions.path.replace('/', '\\')
-        
-#        self.outPath = scenarioOptions.path + 'OPT/'
-#        self.outPath = self.outPath.replace('/','\\')
-        
-        self.episodeYear = scenarioOptions.episodeYear
-        
+        self.path = cont.get('path') + 'OPT/' + run_code + '/'
+        # removed not in use.
+        #self.outPathNR = self.path.replace('/', '\\')
+        # out path for NONROAD to read.
+        self.outPathPopAlo = cont.get('path').replace('/', '\\')
+        self.episodeYear = episodeYear
         self.state = state
-        
-        self.modelRunTitle = scenarioOptions.modelRunTitle
-                
+        self.modelRunTitle = cont.get('modelRunTitle')
+        # temperatures.
         self.tempMin = 50.0
         self.tempMax = 68.8
         self.tempMean = 60.0
-        
-        self.__NRoptions__(fips)
+        # create .opt file
+        self._NRoptions(fips)
 
 
 
-    # creates the .opt file.
-    def __NRoptions__(self, fips):
+    '''
+    creates the .opt file.
+    @param fips: Geographical Location
+    '''
+    def _NRoptions(self, fips):
         
         with open(self.path + self.state + ".opt", 'w') as self.opt_file:
         
