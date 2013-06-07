@@ -1,17 +1,25 @@
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-import psycopg2 as db
 from pylab import *
 import matplotlib.pyplot as plt
 from scipy.stats import scoreatpercentile
-import Options
 
 """
-function to collect the data from the database using a query in the form of a string
+Determines the number of counties with unhealthy amounts of air pollutants.
+Has lines on the graph indicating what percentage of air pollutants would be bad.
+Saved as Figures/RatioToNEI_'+queryTable+'.png.
+X-axis: Air pollutants.
+Y-axis: Ratio of feed stock emmisions to the NEI collected emmision invetory.
 """
-class RatioToNEIFig(Options.ScenarioOptions):
+class RatioToNEIFig():
     
-    def __init__(self, modelRunTitle):
-        Options.ScenarioOptions.__init__(self, modelRunTitle)
+    '''
+    Create model.
+    @param db: Database.
+    @param path: Path to Directory.
+    '''
+    def __init__(self, cont):
+        self.db = cont.get('db')
+        self.path = cont.get('path')
         self.documentFile = "RatioToNEIFig"
     
         self.f = open(self.path+'Figures/RatioToNEI_Numerical.csv','w')
@@ -94,14 +102,11 @@ class RatioToNEIFig(Options.ScenarioOptions):
             
         
     def __collectData__(self, queryTable):
-    
+        query = """SELECT nh3, nox, voc, pm25, pm10, co, sox 
+                FROM %s.%s 
+                WHERE co > 0.0 AND sox > 0.0;"""  % (self.db.schema, queryTable)
+        data = self.db.output(query, self.db.schema)
         
-        cur = self.conn.cursor()
-        cur.execute("SELECT nh3, nox, voc, pm25, pm10, co, sox FROM %s.%s WHERE co > 0.0 AND sox > 0.0;"  % (self.schema, queryTable))
-#        data.append(cur.fetchall())
-        data = cur.fetchall()
-        
-        cur.close()
 #        #create arrays for the data
         data_matrix = matrix(data)
 #        
@@ -125,9 +130,6 @@ class RatioToNEIFig(Options.ScenarioOptions):
     Hence, these statistic calculated here will apply to all of the pollutants. 
     """
     def __generalStats__(self, data_array, pollutantList, feedstockList, feedstock):
-        
-    
-        
         for pNum, pollutant in enumerate(pollutantList):
             lines=[ feedstockList[feedstock], pollutant, max(data_array[pNum])[0],
                  scoreatpercentile(data_array[pNum],95), 
@@ -219,10 +221,7 @@ class RatioToNEIFig(Options.ScenarioOptions):
         plt.plot(range(9),[0.1]*9,color='green',alpha=0.8,linestyle='--')
         plt.plot(range(9),[0.05]*9,color='blue',alpha=0.8,linestyle=':')    
         
-        cur = self.conn.cursor()    
-        cur.execute("""
-    SET search_path TO %s;
-    
+        query = """
     with
         co02 as (select count(fips) as x from %s where co > 0.2),
         co01 as (select count(fips) as x from %s where co > 0.1),
@@ -263,19 +262,16 @@ class RatioToNEIFig(Options.ScenarioOptions):
     union all
     
     select nh3005.x, nox005.x, voc005.x, pm25005.x, pm10005.x, co005.x, sox005.x
-    from co005, nox005, sox005, voc005, nh3005, pm10005, pm25005 """ %
-    (self.schema, 
-     queryTable, queryTable, queryTable, 
-     queryTable, queryTable, queryTable,
-     queryTable, queryTable, queryTable, 
-     
-     queryTable, queryTable, queryTable, 
-     queryTable, queryTable, queryTable, 
-     queryTable, queryTable, queryTable, 
-     
-     queryTable, queryTable,queryTable))
+    from co005, nox005, sox005, voc005, nh3005, pm10005, pm25005 """ % (
+        queryTable, queryTable, queryTable, 
+        queryTable, queryTable, queryTable,
+        queryTable, queryTable, queryTable, 
+        queryTable, queryTable, queryTable, 
+        queryTable, queryTable, queryTable, 
+        queryTable, queryTable, queryTable, 
+        queryTable, queryTable,queryTable)
     
-        cellTextList=cur.fetchall()      
+        cellTextList = self.db.output(query, self.db.schema)
         rowLabels = [' # counties with R > 0.2', 
                      '                   > 0.1', 
                      '                  > 0.05']
@@ -308,6 +304,15 @@ class RatioToNEIFig(Options.ScenarioOptions):
     
         
 if __name__ == "__main__":  
+    # used for testing.
+    import Container
+    import Database as db
+    
     modelRunTitle = "AllFeed"
-    RatioToNEIFig(modelRunTitle)
+    cont = Container.Container()
+    cont.set('modelRunTitle', modelRunTitle)
+    cont.set('path', 'C:/Nonroad/%s/' % (modelRunTitle))
+    cont.set('db', db.Database(modelRunTitle))
+    
+    RatioToNEIFig(cont)
     

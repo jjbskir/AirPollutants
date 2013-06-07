@@ -1,5 +1,8 @@
 import Container
 import Batch
+import Database as db
+import QueryRecorder as qr
+
 import Options as Opt
 import Allocate as Alo
 import Population as Pop
@@ -16,6 +19,9 @@ import ContributionFigure
 
 '''
 Drives program.
+Global Variables: modelRunTitle, run_codes, path, db, qr.
+All stored in a Container.
+Temporary Global Variables: run_code, fips, state, episodeYear.
 '''
 class Driver:
     
@@ -25,15 +31,19 @@ class Driver:
     @param run_codes: Run codes to keep track of where you are in the program  
     '''
     def __init__(self, _modelRunTitle, run_codes):
+        # add run title.
+        self.modelRunTitle = self._addTitle(_modelRunTitle)
+        # add run codes.
+        self.run_codes = run_codes
+        # container to pass info around.
         self.cont = Container.Container()
         self.cont.set('modelRunTitle', self._addTitle(_modelRunTitle))
         self.cont.set('run_codes', run_codes)
         self.cont.set('path', 'C:/Nonroad/%s/' % (_modelRunTitle))
-        
+        self.cont.set('db', db.Database(_modelRunTitle))
+        self.cont.set('qr', qr.QueryRecorder(self.cont.get('path')))
+        # create Batch runner.
         self.batch = Batch.Batch(self.cont)
-        
-        self.modelRunTitle = self._addTitle(_modelRunTitle)
-        self.run_codes = run_codes
     
     '''
     Make sure the program is less then 8 characters.
@@ -70,7 +80,7 @@ class Driver:
             
             #New population object created for each run_code  
             # Pop is the abstract class and .<type> is the concrete class.  
-            if run_code.startswith('CG_I'): pop = Pop.CornGrainIrrigationPop(self.cont, scenario.episodeYear, run_code, alo.inicatorTotal)
+            if run_code.startswith('CG_I'): pop = Pop.CornGrainIrrigationPop(self.cont, scenario.episodeYear, run_code)
             elif run_code.startswith('SG'): pop = Pop.SwitchgrassPop(self.cont, scenario.episodeYear, run_code)
             elif run_code.startswith('FR'): pop = Pop.ForestPop(self.cont, scenario.episodeYear, run_code)
             elif run_code.startswith('CS'): pop = Pop.ResiduePop(self.cont, scenario.episodeYear, run_code)
@@ -99,11 +109,9 @@ class Driver:
                     #write *.opt file, close allocation file, close *.pop file            
                     Opt.NROptionFile(self.cont, state, fips_prior, run_code, scenario.episodeYear)
                     alo.writeSumAndClose(fips_prior)
-                    pop.finishPop()
+                    self._popFinishHelper(pop, alo.inicatorTotal)
                     self.batch.append(state, run_code)
-                    
-#                    print fips_prior, state
-        
+                            
                     fips_prior = fips
                     state = dat[1]   
         
@@ -117,14 +125,25 @@ class Driver:
             #close allocation files    
             Opt.NROptionFile(self.cont, state, fips_prior, run_code, scenario.episodeYear)        
             alo.writeSumAndClose(fips_prior)
-            pop.finishPop()
+            self._popFinishHelper(pop, alo.inicatorTotal)
             self.batch.append(state, run_code)
             self.batch.finish(run_code)
         
         #close scenariobatchfile
         self.batch.scenarioBatchFile.close()
         # save path for running batch files.
+        # why is this here?
         self.path = scenario.path
+    
+    '''
+    If the run code is CG_I, then another input parameter is needed
+    to finishPop().
+    '''
+    def _popFinishHelper(self, pop, indicator):
+        if not pop.run_code.startswith('CG_I'):
+            pop.finishPop()
+        else:
+            pop.finishPop(indicator) 
      
     '''
     Run the NONROAD program by opening the batch files.
@@ -192,7 +211,7 @@ class Driver:
     #----------------------------------------------------------------
             #allocate emissions for single pass methodology - see constructor for ability to allocate CG emissions
             print "Allocate single pass emissions between corn stover and wheat straw."
-            SinglePassAllocation.SinglePassAllocation(self.modelRunTitle)
+            SinglePassAllocation.SinglePassAllocation(self.cont)
     #----------------------------------------------------------------
             
             
@@ -213,13 +232,13 @@ class Driver:
             #create graphics and numerical summary 
             
             #Contribution Analysis
-            ContributionFigure.ContributionAnalysis(self.modelRunTitle)
+            ContributionFigure.ContributionAnalysis(self.cont)
             
             #Emissions Per Gallon
-            EmissionsPerGalFigure.EmissionsPerGallon(self.modelRunTitle)
+            EmissionsPerGalFigure.EmissionsPerGallon(self.cont)
             
             #Ratio to NEI
-            ratioNEI = RatioToNEIFigure.RatioToNEIFig(self.modelRunTitle)
+            ratioNEI = RatioToNEIFigure.RatioToNEIFig(self.cont)
             for feedstock in feedstockList:
                 pass
             
@@ -237,7 +256,7 @@ class Driver:
 if __name__ == "__main__":    
     
     # scenario title.
-    title = 'fullRun'
+    title = 'sgRun'
     # run codes.
     run_codes = [
                      'SG_H1','SG_H2','SG_H3','SG_H4','SG_H5','SG_H6','SG_H7','SG_H8','SG_H9','SG_H10',
@@ -256,8 +275,8 @@ if __name__ == "__main__":
     # run program
     d = Driver(title, run_codes)
     d.setupNONROAD()
-    #d.runNONROAD()
-    #d.saveData()
+    d.runNONROAD()
+    d.saveData()
     
         
         

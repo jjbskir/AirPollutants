@@ -1,20 +1,34 @@
-import Options
+import SaveDataHelper
 
-
-class SinglePassAllocation(Options.ScenarioOptions):
-    def __init__(self, modelRunTitle):
-        Options.ScenarioOptions.__init__(self, modelRunTitle)
+'''
+Used to update database to account for single pass machines when harvesting corn.
+Before one pass was for the corn itself and the next pass was to pick up the leftovers on the ground.
+In the future this may occur with one pass.
+'''
+class SinglePassAllocation(SaveDataHelper.SaveDataHelper):
+    
+    def __init__(self, cont):
+        SaveDataHelper.SaveDataHelper.__init__(self, cont)
         self.documentFile = "SinglePassAllocation"
-        
+        # 540 is the total energy allocation for the single pass allocation
+        # 380 of it goes to the residue harvesting and 160 of it goes toward the corn harvesting.
         self.residueAllocation = str(380.0 / 540.0)
         self.cornGrainAllocation = str(160.0 / 540.0)
-        
+        '''
+        @attention: allocateCG never gets called...
+        so the second query is never made either...
+        '''
+        # weather to do corn grain or residue.
         self.allocateCG = False
         
         residues = ['cs','ws']
         
+        '''
+        @attention: should be able to combine the queries into one query. 
+        The second query might never be called...
+        '''
+        #define corn stover query - 380/540
         for r in residues: 
-            #define corn stover query - 380/540
             query = """
                 UPDATE """+r+"""_raw
                 SET
@@ -32,11 +46,10 @@ class SinglePassAllocation(Options.ScenarioOptions):
                     fug_pm25 = fug_pm10 * """+self.residueAllocation+"""
                 WHERE description ilike '%Harvest%';
             """             
-            self.__executeQuery__(query)
+            self._executeQuery(query)
             
-       
+        #define corn grain query - 160/540
         if self.allocateCG:
-            #define corn grain query
             query = """
                 UPDATE """+r+"""_raw
                 SET
@@ -56,7 +69,7 @@ class SinglePassAllocation(Options.ScenarioOptions):
                     description NOT ilike '%Conventional%' AND
                     description ilike '% Harvest%';
             """            
-            self.__executeQuery__(query)
+            self._executeQuery(query)
         
         
         

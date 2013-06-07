@@ -1,17 +1,17 @@
-import Options
+import SaveDataHelper
 
 '''
 Used to populate the newly created schema that stores emmision info.
 Inserts data into cg_chem for emmisions from chemicals.
 '''
-class Chemical(Options.ScenarioOptions):
+class Chemical(SaveDataHelper.SaveDataHelper):
     
     '''
     @attention: Only need db parts from OptionsScenario.
     will need schema variabls.
     '''
     def __init__(self, cont):
-        Options.ScenarioOptions.__init__(self, cont)
+        SaveDataHelper.SaveDataHelper.__init__(self, cont)
         self.documentFile = "Chemical"
          
     
@@ -25,7 +25,7 @@ class Chemical(Options.ScenarioOptions):
             elif feed == 'SG':
                 query = self.__switchgrass__()
                 
-            self.__executeQuery__(query)
+            self._executeQuery(query)
             
         
         

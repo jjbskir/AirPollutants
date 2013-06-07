@@ -320,9 +320,8 @@ class CornGrainIrrigationPop(Population):
         [6] - percent of acres
         [7] - hours per acre (hpa)
     """
-    def __init__(self, cont, episodeYear, run_code, inicatorTotal):
+    def __init__(self, cont, episodeYear, run_code):
         Population.__init__(self, cont, episodeYear, run_code)
-        self.inicatorTotal = inicatorTotal
     
     '''
     @attention: why does this have a different initialize then from the main Population class?
@@ -335,8 +334,12 @@ class CornGrainIrrigationPop(Population):
     def append_Pop(self, fips, indicator1):
         pass
 
-    
-    def finishPop(self):
+    '''
+    Finishes the population file.
+    For irrigation this is most of the class.
+    @param indicator: Indicator total from allocation class.
+    '''
+    def finishPop(self, indicator):
         if self.dat[0] < 9999: fips = '0'+str(self.dat[0])
         else: fips = str(self.dat[0])
         
@@ -349,7 +352,7 @@ class CornGrainIrrigationPop(Population):
         if self.run_code.endswith('G'):     
             hp_array = ['0']*7
             
-            pop = round(self.inicatorTotal * hpa / self.activity_gas,10)            
+            pop = round(indicator * hpa / self.activity_gas,10)            
                 
             if hp < 6: hp_array[0] = pop
             elif hp < 11: hp_array[1] = pop
@@ -379,7 +382,7 @@ class CornGrainIrrigationPop(Population):
         #LPG Irrigation, only one hp range is modeled in Nonroad
         if self.run_code.endswith('L'):
             
-            pop = round(self.inicatorTotal * hpa / self.activity_lpg,10)
+            pop = round(indicator * hpa / self.activity_lpg,10)
             lines = """%s000       %s 2267005060 LPG - Irrigation Sets                      100   175   113  3000  DEFAULT        %s
 """ % (st_fips, self.episodeYear, pop)
     
@@ -388,7 +391,7 @@ class CornGrainIrrigationPop(Population):
         if self.run_code.endswith('C'):
             hp_array = ['0']*6
             
-            pop = round(self.inicatorTotal * hpa / self.activity_cng,10)            
+            pop = round(indicator * hpa / self.activity_cng,10)            
                 
             if hp < 40: hp_array[0] = pop
             elif hp < 75: hp_array[1] = pop
@@ -416,7 +419,7 @@ class CornGrainIrrigationPop(Population):
 
             hp_array = ['0']*11
             
-            pop = round(self.inicatorTotal * hpa / self.activity_diesel,10)            
+            pop = round(indicator * hpa / self.activity_diesel,10)            
                 
             if hp < 11: hp_array[0] = pop
             elif hp < 16: hp_array[1] = pop
@@ -467,21 +470,14 @@ class CornGrainIrrigationPop(Population):
 
 
 
-
-
-
-
-
-
-#-----------------------------------------------------------------------
+"""
+Calculates equipment populations for a perennial (10 year) switchgrass model run.
+"""    
 class SwitchgrassPop(Population):
-    """
-    Calculates equipment populations for a perennial (10 year) switchgrass model run.
-    """    
+
     def __init__(self, cont, episodeYear, run_code):
         Population.__init__(self, cont, episodeYear, run_code)
         
-
         
 #Yield assumptions for switchgrass (fractions are compared to 'mature yields')       
         if self.run_code.endswith('H1'): 
@@ -501,8 +497,14 @@ class SwitchgrassPop(Population):
         else:
             harv_ac = dat[2] * 0.1    #10% of acres in each year of the 10-yr production cycle
             prod = dat[3] / 10.0      #Production at maturity    
-            
-            if self.run_code.startswith('SG_NH'): 
+            '''
+            **********************************
+            @attention: 'SG_N' was SG_NH before,
+            meaning that part of the code never ran 
+            giving false results.
+            ***********************************
+            '''
+            if self.run_code.startswith('SG_N'): 
                 self.__getNonHarvHrsPerAcre__(harv_ac)
             elif self.run_code.startswith('SG_H'):
                 self.__getHarvHrsPerAcre__(harv_ac, prod)

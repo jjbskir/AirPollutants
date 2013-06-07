@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 Created on Wed Dec 19 09:18:49 2012
-
 @author: nfisher
+Chooses the sql to grab data for ContributionFigure graph.
 """
 class ChooseSQL:
 #    def __init__(self, modelRunTitle):

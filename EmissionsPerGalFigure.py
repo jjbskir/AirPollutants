@@ -1,9 +1,7 @@
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-import psycopg2 as db
 from pylab import *
 import matplotlib.pyplot as plt
 from scipy.stats import scoreatpercentile
-import Options
 
 """
 @comments: much of this plotting utility was taken from the following URL:
@@ -11,12 +9,22 @@ http://matplotlib.org/examples/pylab_examples/boxplot_demo2.html
 """
 
 """
-function to collect the data from the database using a query in the form of a string
+Creates a graph for each air pollutant emmision.
+Saved as Figures/PerGalEtOH_'+pollutant+'.png
+Each graph has the total amount of air pollutants for each feedstock.
+X-axis: feedstock
+Y-axis: pollutant emmisions.
 """
-
-class EmissionsPerGallon(Options.ScenarioOptions):
-    def __init__(self, modelRunTitle):
-        Options.ScenarioOptions.__init__(self, modelRunTitle)
+class EmissionsPerGallon():
+    
+    '''
+    Create emmision graphs.
+    @param db: Database.
+    @param path: Directory path.
+    '''
+    def __init__(self, cont):
+        self.path = cont.get('path')
+        self.db = cont.get('db')
         self.documentFile = "EmissionsPerGallon"
     
         self.f = open(self.path + 'FIGURES/PerGalEtOH_numerical.csv','w')
@@ -72,14 +80,21 @@ class EmissionsPerGallon(Options.ScenarioOptions):
     def __collectData__(self, queryTable, feedstockList, pollutant, EtOHVals):
         data = []
         for fNum, feedstock in enumerate(feedstockList):
+            '''
             cur = self.conn.cursor()
             query = """
     SELECT (%s) / (prod * %s * 1e-6) FROM %s.%s WHERE prod > 0.0 AND feedstock ilike '%s';
     """  % (pollutant, EtOHVals[fNum], self.schema, queryTable, feedstock)
             cur.execute(query)
             data.append(cur.fetchall())
-             
             cur.close()
+            '''
+            
+            query = """
+                    SELECT (%s) / (prod * %s * 1e-6) FROM %s.%s WHERE prod > 0.0 AND feedstock ilike '%s';
+                    """  % (pollutant, EtOHVals[fNum], self.db.schema, queryTable, feedstock)
+            emmisions = self.db.output(query, self.db.schema)
+            data.append(emmisions)
              
         self.__writeData__(data, feedstockList, pollutant)
         return data
@@ -166,6 +181,14 @@ class EmissionsPerGallon(Options.ScenarioOptions):
         
         
 if __name__ == "__main__":  
+    # used for testing.
+    import Container
+    import Database as db
+    
     modelRunTitle = "AllFeed"
-    EmissionsPerGallon(modelRunTitle)
-       
+    cont = Container.Container()
+    cont.set('modelRunTitle', modelRunTitle)
+    cont.set('path', 'C:/Nonroad/%s/' % (modelRunTitle))
+    cont.set('db', db.Database(modelRunTitle))
+    
+    EmissionsPerGallon(cont)

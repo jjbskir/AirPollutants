@@ -5,17 +5,31 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 from pylab import median
 import matplotlib
-import psycopg2 as db
 from ContributionTests import ChooseSQL
 #import time
-import Options
 
-class ContributionAnalysis(Options.ScenarioOptions):
-    def __init__(self, modelRunTitle):
-        Options.ScenarioOptions.__init__(self, modelRunTitle)
+'''
+Makes figure. Saved to Figures/Contribution_Figure.png.
+X-axis: Amount of air pollutant emmisions.
+Y-axis: Feedsotcks. 
+Columns: All the different air emmission pollutants .
+Rows: Type of production
+'''
+class ContributionAnalysis():
+    
+    '''
+    Create graphics and store data in a spreadsheet.
+    @param db: Database.
+    @param path: Directory path.
+    '''
+    def __init__(self, cont):
+        self.db = cont.get('db')
+        self.path = cont.get('path')
         self.documentFile = "ContributionAnalysis"
     #    startTime = time.time()
     #-----------inputs begin
+    
+        # create container and canvas for all plots.
         fig = Figure( figsize=(7,5), dpi=200) 
         canvas = FigureCanvas(fig)
             
@@ -30,16 +44,15 @@ class ContributionAnalysis(Options.ScenarioOptions):
         
         self.f = open(self.path + 'Figures/Contribution_numerical.csv','w') 
     #-----------inputs end
-    
-    
         
         index = 0
         for yLabel, activity in enumerate(activityList):
             print activity
-        
+            # create subplots.
             for titleLabel, pollutant in enumerate(pollutantList):
-                
+                # add a sublot to the figure.
                 ax = fig.add_subplot( 5, 7, index+1 )
+                # set the min and max of the axis.
                 ax.set_xlim([-1,5])
                 ax.set_ylim([-0.1, 1.1])
           
@@ -63,9 +76,10 @@ class ContributionAnalysis(Options.ScenarioOptions):
                 index+=1
                 self.f.write(pollutant+','+activity+'\n')
                 for fNum, feedstock in enumerate(feedstockList):
-    
-                    x = ChooseSQL(activity, pollutant, feedstock, self.schema)
-                    self.makePlots(ax, x, fNum, 
+                    # used to decide what to query.
+                    chooseQuery = ChooseSQL(activity, pollutant, feedstock, self.db.schema)
+                    # make plots.
+                    self.makePlots(ax, chooseQuery, fNum, 
                               fColor[fNum], fMarker[fNum], feedstock)  
          
                 self.f.write('\n')
@@ -76,33 +90,30 @@ class ContributionAnalysis(Options.ScenarioOptions):
            
         self.f.close()
     #    print time.time() - startTime, ' seconds'
-        
-        
-    
-    
     
     
     """
-    This section of code formats the plots
+    Formats the plots
+    @param ax: Subplot. 
+    @param query: Query to grab data for plot.  
+    @param fNum: Feedstock index.
+    @param fColor: Color to make points.
+    @param fMarker: Marker type to put on graph. (circles, boxes, ect...)
+    @param feedstock: Type of feedstock ('CG','SG','CS','WS','FR')   
     """
-    def makePlots(self, ax, x, fNum, fColor, fMarker, feedstock):
+    def makePlots(self, ax, query, fNum, fColor, fMarker, feedstock):
         
-        x.getQuery()
+        query.getQuery()
         
-        if x.queryString.startswith('No'):
+        if query.queryString.startswith('No'):
             pass    
         
-        elif x.queryString.startswith('FR'):
+        elif query.queryString.startswith('FR'):
             data = [1,1]
             ax.plot([fNum]*2,[1,1],fColor,marker=fMarker,markersize=2)
             
         else:
-            cur = self.conn.cursor()
-            print x.queryString
-            cur.execute(x.queryString)
-            #[all data]
-            data = cur.fetchall()
-            cur.close()
+            data = self.db.output(query.queryString, self.db.schema)
             medVal = median(data)
             maxVal = max(data)
             minVal = min(data)
@@ -116,7 +127,7 @@ class ContributionAnalysis(Options.ScenarioOptions):
     
     
     """
-    This section writes the results to a file in a readable format. 
+    Writes the results to a file in a readable format. 
     """
     def writeResults(self, feedstock, maxVal, medVal, minVal):
         self.f.write(feedstock+','+maxVal+','+medVal+','+minVal+'\n')
@@ -125,6 +136,14 @@ class ContributionAnalysis(Options.ScenarioOptions):
 
 
 if __name__ == "__main__":  
+    # used for testing.
+    import Container
+    import Database as db
+    
     modelRunTitle = "AllFeed"
-    ContributionAnalysis(modelRunTitle)
-       
+    cont = Container.Container()
+    cont.set('modelRunTitle', modelRunTitle)
+    cont.set('path', 'C:/Nonroad/%s/' % (modelRunTitle))
+    cont.set('db', db.Database(modelRunTitle))
+    
+    ContributionAnalysis(cont)   

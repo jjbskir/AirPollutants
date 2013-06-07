@@ -1,8 +1,12 @@
-import Options
+import SaveDataHelper
 
-class NEIComparison(Options.ScenarioOptions):
+'''
+What is NEI?
+'''
+class NEIComparison(SaveDataHelper.SaveDataHelper):
+    
     def __init__(self, cont):
-        Options.ScenarioOptions.__init__(self, cont)
+        SaveDataHelper.SaveDataHelper.__init__(self, cont)
         self.documentFile = "NEIComparison"
         
         self.cellulosicAllocation = 0.34
@@ -25,7 +29,7 @@ PM10    float    DEFAULT 0.0,
 PM25    float    DEFAULT 0.0,
 CO    float    DEFAULT 0.0);"""
 
-        self.__executeQuery__(query)
+        self._executeQuery(query)
 
 
 
@@ -41,7 +45,7 @@ pm10    float    ,
 pm25    float    ,
 voc    float    ,
 nh3    float);"""
-        self.__executeQuery__(query)
+        self._executeQuery(query)
         
         
             
@@ -165,7 +169,7 @@ nh3    float);"""
             self.db.productionSchema +'.'+ feedstock + "_data")            
 
 
-        self.__executeQuery__(query)
+        self._executeQuery(query)
     
  
     
@@ -225,7 +229,7 @@ WITH
         
         
         
-        self.__executeQuery__(query)
+        self._executeQuery(query)
         
         
 

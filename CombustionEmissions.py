@@ -1,4 +1,4 @@
-import Options
+import SaveDataHelper
 import csv
 import os
 
@@ -10,9 +10,9 @@ Transform the data from the default Nonroad output to a useful format.
 Update database with emissions as well as copy emissions to static files
 for quick debugging and error checking.  
 """
-class CombustionEmissions(Options.ScenarioOptions):
+class CombustionEmissions(SaveDataHelper.SaveDataHelper):
     def __init__(self, cont):
-        Options.ScenarioOptions.__init__(self, cont)
+        SaveDataHelper.SaveDataHelper.__init__(self, cont)
         self.documentFile = "CombustionEmissions"
         self.pmRatio = 0.20
        

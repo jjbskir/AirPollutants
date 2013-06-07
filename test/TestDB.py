@@ -1,11 +1,10 @@
-import Database
-
+from Database import Database
 '''
 Uses a test schema and a new scenario schema from the database
 and tests to see if the data is the same. 
 @inherits Database.Database: Inherits database class for querying data.
 '''
-class TestDB(Database.Database):
+class TestDB(Database):
     
     '''
     Inherit from database to grab test data.
@@ -13,7 +12,7 @@ class TestDB(Database.Database):
     @param testSchema: Test schema that we know is allready correct.
     '''
     def __init__(self, _newSchema, _testSchema):
-        Database.Database.__init__(self, _newSchema)
+        Database.__init__(self, _newSchema)
         self.testSchema = _testSchema
 
     '''

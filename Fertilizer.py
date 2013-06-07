@@ -1,17 +1,17 @@
-import Options
+import SaveDataHelper
 
 '''
 Used to populate the newly created schema that stores emmision info.
 Inserts data into feed_nfert for emmisions from fertilizers.
 '''
-class Fertilizer(Options.ScenarioOptions):
+class Fertilizer(SaveDataHelper.SaveDataHelper):
     
     '''
     @attention: should seperate db object so that the overhang of the class
     that is not needed, will not be here. 
     '''
     def __init__(self, cont):
-        Options.ScenarioOptions.__init__(self, cont)
+        SaveDataHelper.SaveDataHelper.__init__(self, cont)
         # gets used to save query to a text file for debugging purposes.
         self.documentFile = "Fertilizer"
            
@@ -36,7 +36,7 @@ class Fertilizer(Options.ScenarioOptions):
             elif feed == 'SG':
                 query = self.__switchgrass__()
               
-            self.__executeQuery__(query)
+            self._executeQuery(query)
         
         
         

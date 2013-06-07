@@ -1,13 +1,13 @@
-import Options
+import SaveDataHelper
 
 """
 Create the fugitive dust emisisons based on the run code
 The run code tells you the feedstock, tillage, and operation
 (harvest/non-harvest/irrigation). 
 """
-class FugitiveDust(Options.ScenarioOptions):
+class FugitiveDust(SaveDataHelper.SaveDataHelper):
     def __init__(self, cont):
-        Options.ScenarioOptions.__init__(self, cont)
+        SaveDataHelper.SaveDataHelper.__init__(self, cont)
         self.documentFile = "FugitiveDust"
         self.pmRatio = 0.20
     
@@ -37,7 +37,7 @@ class FugitiveDust(Options.ScenarioOptions):
             pass
 #            query = self.__switchgrass__(run_code)
  
-        self.__executeQuery__(query)
+        self._executeQuery(query)
         
  
  
@@ -157,7 +157,7 @@ class FugitiveDust(Options.ScenarioOptions):
                        str("%transport%"),
                        str("%" + tillage + "%")
                        ) 
-            self.__executeQuery__(query)
+            self._executeQuery(query)
             
 # return query for non-transport operations
         query = """
@@ -217,7 +217,7 @@ class FugitiveDust(Options.ScenarioOptions):
                    str("%transport%"),
                    str("%" + tillage + "%")
                    ) 
-        self.__executeQuery__(transportQuery)
+        self._executeQuery(transportQuery)
 
 # return non-transport emissions query        
         query = """
@@ -278,7 +278,7 @@ class FugitiveDust(Options.ScenarioOptions):
                    str("%transport%"),
                    str("%" + tillage + "%")
                    ) 
-        self.__executeQuery__(transportQuery)
+        self._executeQuery(transportQuery)
 
 # return non-transport emissions query        
         query = """
@@ -309,9 +309,11 @@ class FugitiveDust(Options.ScenarioOptions):
 #Data structure to hold SG emission factors
 #   --structure is kept in the 'long-hand' format so users may easily change
 #        EF's in the future
-class SG_FugitiveDust(Options.ScenarioOptions):
+class SG_FugitiveDust(SaveDataHelper.SaveDataHelper):
+    
     def __init__(self, cont, operation):
-        Options.ScenarioOptions.__init__(self, cont)
+        SaveDataHelper.SaveDataHelper.__init__(self, cont)
+        self.documentFile = "SG_FugitiveDust"
         self.pmRatio = 0.20
         
         
@@ -382,7 +384,7 @@ class SG_FugitiveDust(Options.ScenarioOptions):
                        str("%" + self.description + str(year+1) + "%")
                        )
             
-            self.__executeQuery__(query)
+            self._executeQuery(query)
             
 
         

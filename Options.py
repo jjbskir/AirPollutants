@@ -1,6 +1,4 @@
 import os
-import Database as db
-import QueryRecorder as qr
 
 """
 The ScenarioOptions object is used to query production (harvested acres and production) from a database. 
@@ -13,9 +11,9 @@ class ScenarioOptions:
 
     def __init__(self, cont):
         # database
-        self.db = db.Database(cont.get('modelRunTitle'))
+        self.db = cont.get('db')
         # query recorder.
-        self.qr = qr.QueryRecorder(cont.get('path'))
+        self.qr = cont.get('qr')
         # title of scenario. 
         self.modelRunTitle = cont.get('modelRunTitle')
         # run codes
@@ -44,19 +42,6 @@ class ScenarioOptions:
             os.makedirs(self.path + "OUT/")
             os.makedirs(self.path + "FIGURES/")
             os.makedirs(self.path + "QUERIES/")
-
-    
-    '''
-    used to execute a sql query that inserts data into the databse.
-    uses isQuery to create a text file for the sql queries to be recorded. Only occurs during first query.
-    @param query: sql insert query. 
-    @attention: remove self.docFile and make private. 
-    Used in different way here and indocumentEFs 
-    '''
-    def __executeQuery__(self, query):  
-        self.qr.documentQuery(self.documentFile, query)   
-        print query     
-        self.db.input(query)
     
     '''
     Executes query and records it to database. Should be emmission final? from constants though.

@@ -8,7 +8,7 @@ class Container:
     Add known variables to the container to be used through out the program.
     '''
     def __init__(self):
-        keys = ['modelRunTitle', 'run_codes', 'path']
+        keys = ['modelRunTitle', 'run_codes', 'path', 'db', 'qr']
         self.c = {}
         for key in keys:
             self.c[key] = None      
