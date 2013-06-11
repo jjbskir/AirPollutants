@@ -25,9 +25,11 @@ class Fertilizer(SaveDataHelper.SaveDataHelper):
         if feed != 'FR':
              
             if feed == 'CS':
+                print feed
                 query = self.__cornStover__(feed)
         
             elif feed == 'WS':
+                print feed
                 query = self.__wheatStraw__(feed)
                 
             elif feed == 'CG':

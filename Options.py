@@ -163,7 +163,7 @@ class ScenarioOptions:
             
             elif run_code == 'CS_NT':
                 query = """select ca.fips, ca.st, dat.notill_harv_ac, dat.notill_prod, dat.notill_yield 
-                from cs_data dat, """ + self.db.constantsSchema + """.county_attributes ca where dat.fips = ca.fips  order by ca.fips asc"""
+                from cs_data dat, """ + self.db.constantsSchema + """.county_attributes ca where dat.fips = ca.fips order by ca.fips asc"""
                 
           
           
@@ -178,7 +178,7 @@ class ScenarioOptions:
             
             elif run_code == 'WS_NT':
                 query = """select ca.fips, ca.st, dat.notill_harv_ac, dat.notill_prod, dat.notill_yield 
-                from ws_data dat, """ + self.db.constantsSchema + """.county_attributes ca where dat.fips = ca.fips  order by ca.fips asc"""
+                from ws_data dat, """ + self.db.constantsSchema + """.county_attributes ca where dat.fips = ca.fips order by ca.fips asc"""
         
         
                 

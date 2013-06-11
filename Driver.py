@@ -30,7 +30,7 @@ class Driver:
     @param modelRunTitle: Scenario title.
     @param run_codes: Run codes to keep track of where you are in the program  
     '''
-    def __init__(self, _modelRunTitle, run_codes):
+    def __init__(self, _modelRunTitle, run_codes, _db):
         # add run title.
         self.modelRunTitle = self._addTitle(_modelRunTitle)
         # add run codes.
@@ -40,13 +40,14 @@ class Driver:
         self.cont.set('modelRunTitle', self._addTitle(_modelRunTitle))
         self.cont.set('run_codes', run_codes)
         self.cont.set('path', 'C:/Nonroad/%s/' % (_modelRunTitle))
-        self.cont.set('db', db.Database(_modelRunTitle))
+        self.cont.set('db', _db)
         self.cont.set('qr', qr.QueryRecorder(self.cont.get('path')))
         # create Batch runner.
         self.batch = Batch.Batch(self.cont)
     
     '''
     Make sure the program is less then 8 characters.
+    Is not a run code.
     @param title: Title of the program.
     '''
     def _addTitle(self, title):
@@ -155,6 +156,7 @@ class Driver:
     Create and populate the schema with the emissions inventory.   
     '''
     def saveData(self):
+        print 'Saving results to database...'
         # initialize database objects
         Fert = Fertilizer.Fertilizer(self.cont) 
         Chem = Chemical.Chemical(self.cont)
@@ -271,11 +273,13 @@ if __name__ == "__main__":
                      'CG_ID','CG_IL',
                      'CG_IC','CG_IG'
                 ] 
+    # create databse.
+    db = db.Database(title)
     
     # run program
-    d = Driver(title, run_codes)
-    d.setupNONROAD()
-    d.runNONROAD()
+    d = Driver(title, run_codes, db)
+    #d.setupNONROAD()
+    #d.runNONROAD()
     d.saveData()
     
         

@@ -137,6 +137,7 @@ class ContributionAnalysis():
 
 if __name__ == "__main__":  
     # used for testing.
+    '''
     import Container
     import Database as db
     
@@ -147,3 +148,4 @@ if __name__ == "__main__":
     cont.set('db', db.Database(modelRunTitle))
     
     ContributionAnalysis(cont)   
+    '''

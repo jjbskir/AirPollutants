@@ -5,9 +5,7 @@ Created on Wed Dec 19 09:18:49 2012
 Chooses the sql to grab data for ContributionFigure graph.
 """
 class ChooseSQL:
-#    def __init__(self, modelRunTitle):
-#        Options.ScenarioOptions.__init__(self, modelRunTitle)
-#  
+
     def __doc__(self):
         return 'Create a structured query based on ( activity, pollutant, feedstock ) inputs'
     

@@ -3,14 +3,20 @@
 
 #from _pyio import __metaclass__
 
-#-----------------------------------------------------------------------
+"""
+The 'Population' class is used to write the .pop files for the nonroad program. 
+The 'append_Pop' is an abstract method determines writes the equipment lists 
+and population to the .pop file. It is defined in each of the feedstockPOP
+classes. 
+"""
 class Population(object):
-    """
-    The 'Population' class is used to write the .pop files for the nonroad program. 
-    The 'append_Pop' is an abstract method determines writes the equipment lists 
-      and population to the .pop file. It is defined in each of the feedstockPOP
-      classes. 
-    """
+    
+    '''
+    Include key variables for creating population files.
+    @param path: Path to project.
+    @param episodeYear: Year for modeling.
+    @param run_code: run code. Determines which subclass to make.  
+    '''
     def __init__(self, cont, episodeYear, run_code):
         
         self.episodeYear = episodeYear
@@ -125,16 +131,16 @@ FIPS       Year  SCC        Equipment Description                    HPmn  HPmx 
 
 '''
 Sub classes of population for each unique crop.
-Should try to standarize what is in the dat[] array with a variable for each index.
+@attention: Should try to standarize what is in the dat[] array with a variable for each index.
 ex) state = dat[1]
 '''
 
-
-#-----------------------------------------------------------------------
+"""
+Calculates equipment populations for corn stover and wheat straw residue collection.
+CS, WS
+"""
 class ResiduePop(Population):
-    """
-    Calculates equipment populations for corn stover and wheat straw residue collection.
-    """
+
     def __init__(self, cont, episodeYear, run_code):
         Population.__init__(self, cont, episodeYear, run_code)
 

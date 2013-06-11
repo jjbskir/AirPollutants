@@ -39,7 +39,7 @@ class CombustionEmissions(SaveDataHelper.SaveDataHelper):
         
         for run_code in run_codes:
             
-            
+            print run_code
             # path to results
             path = 'C:/Nonroad/%s/OUT/%s/' % (modelRunTitle, run_code)
             listing = os.listdir(path)
@@ -56,11 +56,10 @@ class CombustionEmissions(SaveDataHelper.SaveDataHelper):
             queries = []
             for cur_file in listing:
                 # use for debugging
-#                print "Current file is: %s -- %s" % (run_code, cur_file)
-
+                # print "Current file is: %s -- %s" % (run_code, cur_file)
                 reader = csv.reader(open(path + cur_file))
          
-                # account for headers in file
+                # account for headers in file, skip the first 10 lines.
                 for i in range(10): reader.next()
                         
                 for row in reader:

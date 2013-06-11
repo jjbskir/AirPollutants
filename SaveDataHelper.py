@@ -21,5 +21,5 @@ class SaveDataHelper:
     '''     
     def _executeQuery(self, query):
         self.qr.documentQuery(self.documentFile, query)   
-        print query     
+        #print query     
         self.db.input(query)
