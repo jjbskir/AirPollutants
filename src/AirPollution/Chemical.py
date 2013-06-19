@@ -3,6 +3,7 @@ import SaveDataHelper
 '''
 Used to populate the newly created schema that stores emmision info.
 Inserts data into cg_chem for emmisions from chemicals.
+Created from pesticides.
 '''
 class Chemical(SaveDataHelper.SaveDataHelper):
     
@@ -14,8 +15,10 @@ class Chemical(SaveDataHelper.SaveDataHelper):
         SaveDataHelper.SaveDataHelper.__init__(self, cont)
         self.documentFile = "Chemical"
          
-    
-    
+    '''
+    Find the feedstock and add emmissions if it is switch grass or corn grain.
+    @param feed: Feed stock.
+    '''
     def setChemical(self, feed):
         
         if feed == 'CG' or feed == 'SG': 
@@ -29,8 +32,17 @@ class Chemical(SaveDataHelper.SaveDataHelper):
             
         
         
+    '''
+    emmisions = harvested acres * lbs/acre * Evaporation rate * VOC content (lbs VOC / lb active ingridient) * lbs active / lb  VOC
+    emmisions = total VOC emmisions (lbs VOC).
+    total_harv_ac = total harvested acres. (acres)
+    pest.EF = lbs VOC/acre.
+    .9 =  evaporation rate. lbs pesticide/lbs VOC
+    .835 = lbs VOC / lb active ingridient.
+    .9070 = lbs active / lbs pesticide.
+    (acres) * (lbs VOC/acre) * (lbs pesticide/lbs VOC)? * (lbs VOC/lbs active) * (lbs active/lbs pesticide) = lbs VOC
+    '''
     def __cornGrain__(self):
-
         chemQuery = """
 INSERT INTO cg_chem
     (
@@ -48,7 +60,12 @@ INSERT INTO cg_chem
         return chemQuery
     
 
-                                         
+    '''
+    Recieves several different fertilizers: Quinclorac, Attrazine, 2 and 4-D-Amine
+    Multiply by .1 b/c it is switch grass on a ten year cycle.
+    emmisions = .1 * harvested acres * lbs/acre * Evaporation rate * VOC content (lbs VOC / lb active ingridient) * lbs active / lb  VOC
+    emmisions (lbs VOC)
+    '''                                     
     def __switchgrass__(self):
         
         chemQuery = """

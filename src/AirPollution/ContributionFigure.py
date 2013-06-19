@@ -104,6 +104,8 @@ class ContributionAnalysis():
     def makePlots(self, ax, query, fNum, fColor, fMarker, feedstock):
         
         query.getQuery()
+        print feedstock
+        print query.queryString
         
         if query.queryString.startswith('No'):
             pass    

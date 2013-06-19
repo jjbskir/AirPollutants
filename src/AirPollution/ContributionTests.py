@@ -15,6 +15,11 @@ class ChooseSQL:
         self.pol = pollutant
         self.feed = feedstock
         self.queryString = ''
+        
+        print self.feed
+        print self.pol
+        print self.act
+        print self.schema
 
         self.rawTable = feedstock + '_raw'
         
@@ -124,7 +129,7 @@ class ChooseSQL:
     Assemble queries that need only the '*_raw' tables. 
     """        
     def __queryRaw__(self):
-
+        
         if self.pol.startswith('PM'):
             sumPollutant = "(sum(%s) + sum(fug_%s))" % (self.pol, self.pol)
 
@@ -139,13 +144,13 @@ class ChooseSQL:
         self.queryString = """
 with
     activitySum as (select distinct fips, %s as x 
-		from %s.%s where description ilike '%s' group by fips),
+		from %s.%s where description ilike '%% %s' group by fips),
 
     totalSum as (select distinct fips, %s as x 
 		from %s.%s group by fips)
         
 select (a.x/t.x) as x from activitySum a, totalSum t 
-where a.fips = t.fips and t.x > 0.0;
+where a.fips = t.fips and t.x > 0.0 and a.x > 0.0;
 
 """ % (sumPollutant, 
        self.schema, self.rawTable, '%'+act+'%',
@@ -157,33 +162,38 @@ where a.fips = t.fips and t.x > 0.0;
 
 
 
-    """
+    '''
     Assemble queries that need the '*_raw' and '*_fert' tables. 
-    """
-       
+    
+    This part seems very odd.
+    If you are not actually intersested in fertilizers, but are doing a calculation
+    to get Nox and nh3, shouldnt you not care about fert.x for the ration in the first part?
+
+    
     def __queryRawFert__(self):
+
         if self.act != 'Fertilizer':
             ratio = "(act.x)/(raw.x + fert.x)"
-            conditions = ", activitySum act where act.fips = raw.fips and act.fips = fert.fips"
-
+            conditions = ", activitySum act where act.fips = raw.fips and act.fips = fert.fips and act.x > 0.0"
+        # renoved 'and raw.x > 0.0', but added 
         else:
             ratio = "(fert.x)/(raw.x+fert.x)"      
-            conditions = "where raw.fips = fert.fips and raw.x > 0.0"
-            
-        self.queryString = """
+            conditions = "where raw.fips = fert.fips"
+        
+            self.queryString = """
 WITH
 
     activitySum as (select distinct fips, sum(%s) as x 
-		from %s.%s where description ilike '%s' group by fips),
+        from %s.%s where description ilike '%% %s' group by fips),
    
     rawSum as (select distinct r.fips, sum(r.%s) as x 
-		from %s.%s r group by r.fips),
+        from %s.%s r group by r.fips),
 
     fertSum as (select distinct fips, sum(%s) as x 
-		from %s.%s group by fips)
+        from %s.%s group by fips)
   
 select (%s) as x 
-		from rawSum raw, fertSum fert %s and raw.x > 0.0;
+        from rawSum raw, fertSum fert %s and raw.x > 0.0 and fert.x > 0.0;
 
  
 
@@ -192,7 +202,41 @@ select (%s) as x
        self.pol, self.schema, self.fertTable,
        ratio,
        conditions)
-       
+        # for each disting fips location, sum up all the fertilizer specific gas emmisions.   
+        # added and fert.x > 0.0 to the last line of the query. Used to get rid of 
+        # bad data.the sum of fertilizer emmisions should not be 0...
+    '''
+    
+    def __queryRawFert__(self):
+        if self.act != 'Fertilizer':
+            ratio = "(act.x)/(raw.x + fert.x)"
+            conditions = ", activitySum act where act.fips = raw.fips and act.fips = fert.fips and act.x > 0.0"
+
+        else:
+            ratio = "(fert.x)/(raw.x+fert.x)"
+            conditions = "where raw.fips = fert.fips"
+            
+        self.queryString = """
+            WITH
+
+                activitySum as (select distinct fips, sum(%s) as x
+                from %s.%s where description ilike '%s' group by fips),
+                
+                rawSum as (select distinct r.fips, sum(r.%s) as x
+                from %s.%s r group by r.fips),
+
+                fertSum as (select distinct fips, sum(%s) as x
+                from %s.%s group by fips)
+                select (%s) as x
+                FROM rawSum raw, fertSum fert %s 
+                and raw.x > 0.0 and fert.x > 0.0;
+
+
+            """ % (self.pol, self.schema, self.rawTable, '%'+self.act+'%',
+                   self.pol, self.schema, self.rawTable,
+                   self.pol, self.schema, self.fertTable,
+                   ratio,
+                   conditions)       
                    
           
     """
@@ -206,7 +250,7 @@ select (%s) as x
 
         if self.act != 'Chemical':
             ratio = "(act.x)/(raw.x + chem.x)"
-            conditions = ", activitySum act where act.fips = raw.fips and act.fips = chem.fips"
+            conditions = ", activitySum act where act.fips = raw.fips and act.fips = chem.fips and act.x > 0.0"
 
         else:
             ratio = "(chem.x)/(raw.x+chem.x)"      
@@ -216,7 +260,7 @@ select (%s) as x
 WITH
 
     activitySum as (select distinct fips, sum(%s) as x 
-		from %s.%s where description ilike '%s' group by fips),
+		from %s.%s where description ilike '%% %s' group by fips),
    
     rawSum as (select distinct r.fips, sum(r.%s) as x 
 		from %s.%s r group by r.fips),
@@ -225,7 +269,7 @@ WITH
 		from %s.%s group by fips)
   
 select (%s) as x 
-		from rawSum raw, chemSum chem %s and raw.x > 0.0;
+		from rawSum raw, chemSum chem %s and raw.x > 0.0 and chem.x > 0.0;
 
  
 

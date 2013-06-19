@@ -9,14 +9,16 @@ Then saves the data to the db with name <run_code>_raw.
 Transform the data from the default Nonroad output to a useful format. 
 Update database with emissions as well as copy emissions to static files
 for quick debugging and error checking.  
+Combustion emmisions associated with harvest and non-harvest methods that use non-road vehicles.
 """
 class CombustionEmissions(SaveDataHelper.SaveDataHelper):
+    
     def __init__(self, cont):
         SaveDataHelper.SaveDataHelper.__init__(self, cont)
         self.documentFile = "CombustionEmissions"
         self.pmRatio = 0.20
-       
-                               
+        self.basePath = cont.get('path')
+                                 
               
     def populateTables(self, run_codes, modelRunTitle):
         
@@ -41,14 +43,14 @@ class CombustionEmissions(SaveDataHelper.SaveDataHelper):
             
             print run_code
             # path to results
-            path = 'C:/Nonroad/%s/OUT/%s/' % (modelRunTitle, run_code)
+            path = self.basePath + 'OUT/%s/' % (run_code)
             listing = os.listdir(path)
         
             feedstock = run_code[0:2] 
             
             
             # write data to static files for debugging purposes
-            f = open('C:/Nonroad/' + modelRunTitle + '/OUT/' + run_code + '.csv', 'wb')
+            f = open(self.basePath + 'OUT/' + run_code + '.csv', 'wb')
             writer = csv.writer(f)
             writer.writerow(('FIPS', 'SCC', 'HP', 'FuelCons_gal/yr', 'THC_exh', 'VOC_exh', 'CO_exh', 'NOx_exh',
                             'CO2_exh', 'SO2_exh', 'PM10_exh', 'PM25_exh', 'NH3_exh', 'Description'))
@@ -111,6 +113,8 @@ class CombustionEmissions(SaveDataHelper.SaveDataHelper):
     def __getDescription__(self, run_code, SCC, HP):
         # cast HP as a number
         HP = int(HP)
+        # in case operation does not get defined.
+        operation = ''
         
 # Switchgrass        
         if run_code.startswith('SG_H'):
@@ -154,7 +158,7 @@ class CombustionEmissions(SaveDataHelper.SaveDataHelper):
             
             description = tillage + ' - ' + operation
             
-# Corn Grain
+        # Corn Grain
         elif run_code.startswith('CG'):
             
         # get tillage    

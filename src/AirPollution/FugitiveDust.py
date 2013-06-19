@@ -4,6 +4,7 @@ import SaveDataHelper
 Create the fugitive dust emisisons based on the run code
 The run code tells you the feedstock, tillage, and operation
 (harvest/non-harvest/irrigation). 
+Fugitive dust occurs from vehicles such as tractors going over the field and creating lots of dust.
 """
 class FugitiveDust(SaveDataHelper.SaveDataHelper):
     def __init__(self, cont):
@@ -14,6 +15,8 @@ class FugitiveDust(SaveDataHelper.SaveDataHelper):
     """
     loop through run_codes and call this method to create fugitive
     dust emissions in database
+    
+    @attention: why does it execute one query then returns another query?
     """                
     def setEmissions(self, run_code):
 # Forest Residue fugitive dust emissions            

@@ -33,7 +33,7 @@ class Model():
         exclude = ['pg_toast', 'pg_temp_1', 'pg_toast_temp_1', 'pg_catalog', 'public', 
                    'information_schema', 'bts2dat_55', 'constantvals', 'full2008nei'] 
         query = 'SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA'
-        schemas = self.db.output(query, self.db.schema)
+        schemas = self.db.output(query, self.db.productionSchema)
         # list to hold new schema names
         cleanedSchemas = []
         # look through every schema name in the db and find the output ones.

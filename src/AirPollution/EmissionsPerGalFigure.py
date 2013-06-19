@@ -81,13 +81,7 @@ class EmissionsPerGallon():
         data = []
         for fNum, feedstock in enumerate(feedstockList):
             '''
-            cur = self.conn.cursor()
-            query = """
-    SELECT (%s) / (prod * %s * 1e-6) FROM %s.%s WHERE prod > 0.0 AND feedstock ilike '%s';
-    """  % (pollutant, EtOHVals[fNum], self.schema, queryTable, feedstock)
-            cur.execute(query)
-            data.append(cur.fetchall())
-            cur.close()
+            queryTable = summedemissions
             '''
             
             query = """

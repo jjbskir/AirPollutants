@@ -3,6 +3,7 @@ import SaveDataHelper
 '''
 Used to populate the newly created schema that stores emmision info.
 Inserts data into feed_nfert for emmisions from fertilizers.
+Adds emmisions to N0X and NH3, which come from the production of fertilizers.
 '''
 class Fertilizer(SaveDataHelper.SaveDataHelper):
     
@@ -14,7 +15,12 @@ class Fertilizer(SaveDataHelper.SaveDataHelper):
         SaveDataHelper.SaveDataHelper.__init__(self, cont)
         # gets used to save query to a text file for debugging purposes.
         self.documentFile = "Fertilizer"
-           
+    
+    '''
+    Pick the correct feed stock and add fertilizer emmisions to the db.
+    Only one not in use is forest residue b/c it is a forest and does not need fertilizer to grow.
+    @param feed: feed stock. 
+    '''    
     def setFertilizer(self, feed):
 #table format in database        
 #    FIPS    char(5)    ,
@@ -25,11 +31,9 @@ class Fertilizer(SaveDataHelper.SaveDataHelper):
         if feed != 'FR':
              
             if feed == 'CS':
-                print feed
                 query = self.__cornStover__(feed)
         
             elif feed == 'WS':
-                print feed
                 query = self.__wheatStraw__(feed)
                 
             elif feed == 'CG':
@@ -43,6 +47,14 @@ class Fertilizer(SaveDataHelper.SaveDataHelper):
         
         
     def __cornStover__(self, feed):
+        '''
+        why divide by 2000?
+        Why is nh3 calculated differently from nox? 17/14?
+        
+        All for a specific fertilizer:
+        Nitrogen application for feed stock (lbs fertilizer) * % of fertilizer * Pollutant emmision * lbs active / lbs fertilizer * Total feedstock harvested (lbs)
+        (lbs fertilizer) * (lbs pollutant) * (lbs active / lbs fertilizer) * (lbs feedstock) = lbs pollutant?
+        '''
         fertQuery = """        
 INSERT INTO """ + feed + """_nfert
     (
@@ -177,6 +189,12 @@ INSERT INTO """ + feed + """_nfert
     sg.prod, nfert.nox_nsol, nfert.nh3_nsol, N_app.SG are not. Should not affect query.
     '''
     def __switchgrass__(self):
+        '''
+        Nitrogen application (lbs/ton of N nutrients) * harvested lbs * emmisions of nsol * lbs active / lbs fertilizer * evaporation rate
+        
+        (lbs fert/lbs active) * (feedstock lbs) * (pullontant lbs/ ?)? * (lbs active / lbs fert) * (lbs fert/lbs poll)
+        lbs pollutant.
+        '''
         fertQuery = """
 INSERT INTO sg_nfert 
     (

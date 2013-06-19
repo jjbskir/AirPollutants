@@ -122,6 +122,12 @@ class ScenarioOptions:
                 # %s is a place holder for variables listed at the end of the sql query in the ().
                 # subprocess (WITH statment) is querried in the constant cg_irrigated_states. gets data for different
                 # vehicles and their attributes (fuel, horse power.)
+                '''
+                ###########
+                # @attention: %s.cg_data was found to be %s.cdata.
+                # Came to this conclusiong b/c in the CG part.
+                ###########   
+                '''
                 query = """
                 Set search_path to %s; 
                 WITH

@@ -1,7 +1,8 @@
 import Container
 import Batch
-import Database as db
+from model.Database import Database
 import QueryRecorder as qr
+from PyQt4 import QtCore
 
 import Options as Opt
 import Allocate as Alo
@@ -63,9 +64,9 @@ class Driver:
         #initialize objects
         scenario = Opt.ScenarioOptions(self.cont)
         alo = Alo.Allocate(self.cont)
-        # create master batch file
-        self.batch.scenarioBatchFile = open(self.batch.masterPath, 'w')
-        
+        # create batch file.
+        self.batch.getMaster('w')
+                
         # go to each run code.
         for run_code in self.run_codes:
             
@@ -148,9 +149,11 @@ class Driver:
      
     '''
     Run the NONROAD program by opening the batch files.
+    @param qprocess: sub process controller from the Controller.
+    Used to control the flow of the NONROAD program within the application.
     '''   
-    def runNONROAD(self):
-        self.batch.run() 
+    def runNONROAD(self, qprocess):
+        self.batch.run(qprocess) 
         
     '''
     Create and populate the schema with the emissions inventory.   
@@ -221,6 +224,7 @@ class Driver:
             #Create NEI comparison
             
             #create a single table that has all emissions in this inventory
+            print 'populating Summed Dimmesnions table'
             for feedstock in feedstockList:
                 NEI.createSummedEmissionsTable(feedstock)
                 
@@ -258,29 +262,29 @@ class Driver:
 if __name__ == "__main__":    
     
     # scenario title.
-    title = 'sgRun'
+    title = 'folder'
     # run codes.
     run_codes = [
-                     'SG_H1','SG_H2','SG_H3','SG_H4','SG_H5','SG_H6','SG_H7','SG_H8','SG_H9','SG_H10',
-                     'SG_N1','SG_N2','SG_N3','SG_N4','SG_N5','SG_N6','SG_N7','SG_N8','SG_N9','SG_N10',
-                     'SG_T1','SG_T2','SG_T3','SG_T4','SG_T5','SG_T6','SG_T7','SG_T8','SG_T9','SG_T10',
-                     'FR',
+                     #'SG_H1','SG_H2','SG_H3','SG_H4','SG_H5','SG_H6','SG_H7','SG_H8','SG_H9','SG_H10',
+                     #'SG_N1','SG_N2','SG_N3','SG_N4','SG_N5','SG_N6','SG_N7','SG_N8','SG_N9','SG_N10',
+                     #'SG_T1','SG_T2','SG_T3','SG_T4','SG_T5','SG_T6','SG_T7','SG_T8','SG_T9','SG_T10',
+                     #'FR',
                      'CS_RT','CS_NT',
-                     'WS_RT','WS_NT',
-                     'CG_CH','CG_CN',
-                     'CG_RH','CG_RN',
-                     'CG_NH','CG_NN',
-                     'CG_ID','CG_IL',
-                     'CG_IC','CG_IG'
+                     #'WS_RT','WS_NT',
+                     #'CG_CH','CG_CN',
+                     #'CG_RH','CG_RN',
+                     #'CG_NH','CG_NN',
+                     #'CG_ID','CG_IL',
+                     #'CG_IC','CG_IG'
                 ] 
     # create databse.
-    db = db.Database(title)
-    
+    db = Database(title)
+    qprocess = None
     # run program
     d = Driver(title, run_codes, db)
-    #d.setupNONROAD()
-    #d.runNONROAD()
-    d.saveData()
+    d.setupNONROAD()
+    d.runNONROAD(qprocess)
+    #d.saveData()
     
         
         
