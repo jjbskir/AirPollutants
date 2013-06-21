@@ -36,6 +36,7 @@ class CombustionEmissions(SaveDataHelper.SaveDataHelper):
         self.vocConversion = 1.053  # --> default for diesel fuel
         
         # # Convert PM10 to PM2.5
+        # not used at the moment...
         self.pm10toPM25 = 0.97  # --> default for diesel fuel
         #-------Inputs End
         
@@ -71,7 +72,7 @@ class CombustionEmissions(SaveDataHelper.SaveDataHelper):
                 # _getDescription updates the vocConversion, NH3_EF and LHV for each fuel type    
                         SCC = row[2]
                         HP = row[3]   
-                        description = self.__getDescription__(run_code, SCC, HP)                
+                        description = self._getDescription(run_code, SCC, HP)                
                         
                         
 
@@ -84,11 +85,10 @@ class CombustionEmissions(SaveDataHelper.SaveDataHelper):
                         PM25 = float(row[10]) * 0.97 * convert_tonne
                         FuelCons = float(row[19])  # gal/year
                         
-
                         
                         VOC = THC * self.vocConversion * convert_tonne                    
                         NH3 = FuelCons * self.LHV * self.NH3_EF / (1e6)  # gal/year * mmBTU/gal * gNH3/mmBTU * Mg/g
-                    
+                        
 
                 # write data to static files and the database
                         writer.writerow((row[0], SCC, HP, FuelCons, THC, VOC, CO, NOx,
@@ -97,7 +97,11 @@ class CombustionEmissions(SaveDataHelper.SaveDataHelper):
                         q = """INSERT INTO %s.%s_raw (FIPS, SCC, HP, THC, VOC, CO, NOX, CO2, SOx, PM10, PM25, fuel_consumption, NH3, description, run_code) 
                             VALUES ('%s', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, '%s', '%s')""" % (self.db.schema, feedstock, row[0], SCC, HP, THC, VOC, CO, NOx, CO2, SO2, PM10, PM25, FuelCons, NH3, description, run_code)
                         queries.append(q)
-        
+                        # change constants back to normal, b/c they can be changes in _getDescription()
+                        self.LHV = 128450.0 / 1e6  
+                        self.NH3_EF = 0.68
+                        self.vocConversion = 1.053
+                        
             self.db.input(queries)
             
             
@@ -110,7 +114,7 @@ class CombustionEmissions(SaveDataHelper.SaveDataHelper):
 
 
 
-    def __getDescription__(self, run_code, SCC, HP):
+    def _getDescription(self, run_code, SCC, HP):
         # cast HP as a number
         HP = int(HP)
         # in case operation does not get defined.
@@ -122,7 +126,7 @@ class CombustionEmissions(SaveDataHelper.SaveDataHelper):
                 description = "Year %s - Harvest" % (run_code[4])  # year 1-9
             else:
                 description = "Year %s - Harvest" % (run_code[4:6])  # year 10
-        
+
         elif run_code.startswith('SG_N'):
             if len(run_code) == 4: 
                 description = "Year %s - Non-Harvest" % (run_code[4])  # year 1-9

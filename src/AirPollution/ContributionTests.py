@@ -15,11 +15,6 @@ class ChooseSQL:
         self.pol = pollutant
         self.feed = feedstock
         self.queryString = ''
-        
-        print self.feed
-        print self.pol
-        print self.act
-        print self.schema
 
         self.rawTable = feedstock + '_raw'
         
@@ -168,45 +163,7 @@ where a.fips = t.fips and t.x > 0.0 and a.x > 0.0;
     This part seems very odd.
     If you are not actually intersested in fertilizers, but are doing a calculation
     to get Nox and nh3, shouldnt you not care about fert.x for the ration in the first part?
-
-    
-    def __queryRawFert__(self):
-
-        if self.act != 'Fertilizer':
-            ratio = "(act.x)/(raw.x + fert.x)"
-            conditions = ", activitySum act where act.fips = raw.fips and act.fips = fert.fips and act.x > 0.0"
-        # renoved 'and raw.x > 0.0', but added 
-        else:
-            ratio = "(fert.x)/(raw.x+fert.x)"      
-            conditions = "where raw.fips = fert.fips"
-        
-            self.queryString = """
-WITH
-
-    activitySum as (select distinct fips, sum(%s) as x 
-        from %s.%s where description ilike '%% %s' group by fips),
-   
-    rawSum as (select distinct r.fips, sum(r.%s) as x 
-        from %s.%s r group by r.fips),
-
-    fertSum as (select distinct fips, sum(%s) as x 
-        from %s.%s group by fips)
-  
-select (%s) as x 
-        from rawSum raw, fertSum fert %s and raw.x > 0.0 and fert.x > 0.0;
-
- 
-
-""" % (self.pol, self.schema, self.rawTable, '%'+self.act+'%',
-       self.pol, self.schema, self.rawTable,
-       self.pol, self.schema, self.fertTable,
-       ratio,
-       conditions)
-        # for each disting fips location, sum up all the fertilizer specific gas emmisions.   
-        # added and fert.x > 0.0 to the last line of the query. Used to get rid of 
-        # bad data.the sum of fertilizer emmisions should not be 0...
     '''
-    
     def __queryRawFert__(self):
         if self.act != 'Fertilizer':
             ratio = "(act.x)/(raw.x + fert.x)"

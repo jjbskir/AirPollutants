@@ -138,23 +138,30 @@ ex) state = dat[1]
 """
 Calculates equipment populations for corn stover and wheat straw residue collection.
 CS, WS
+Residues have harvest and transports emmisions, but none for non-harvest.
+Because these are residues, so the emmisions are going to corn grain.
 """
 class ResiduePop(Population):
 
     def __init__(self, cont, episodeYear, run_code):
         Population.__init__(self, cont, episodeYear, run_code)
-
          
-    # calulates the population of combines needed.               
+    '''
+    Calulates the population of combines and tractors needed.
+    Then writes them to a population file.  
+    @param fips: fips county code. (string)
+    @param dat: Data from the db containing harvested acres and the yield from the residues. list(string)    
+    '''          
     def append_Pop(self, fips, dat):
         harv_ac = dat[2]
-#        prod = dat[3]                    #Not used, but kept for consistency.
+        #prod = dat[3]                    #Not used, but kept for consistency.
         scenario_yield = dat[4]        
  
         hours_per_acre_combine = self._getCombineHoursPerAcre(scenario_yield)
 
-        #calculate population
+        #calculate population of combine for harvest.
         pop_comb = round(hours_per_acre_combine * harv_ac / (self.activity_combine), 10)
+        # calculate population of tractors for transport.
         pop_bale_mover = round((scenario_yield / self.transportBales) * harv_ac / (self.activity_tractor),10)
 
         lines = """%s       %s 2270005020 Dsl - Combines                             300   600 345.8  7000  DEFAULT         %s
@@ -174,27 +181,29 @@ class ResiduePop(Population):
    
    
    
-                
-#-----------------------------------------------------------------------          
+'''
+Calculate forest residue populations and add them to .pop file.
+Only harvest wood cutting equipment.
+'''                
 class ForestPop(Population):
-    """
-    Calculates equipment populations for forest residue collection.
-    """
+
     def __init__(self, cont, episodeYear, run_code):
         Population.__init__(self, cont, episodeYear, run_code)
 
-#Forest         
+        #Forest         
         self.activity_loader = 1276.0              # hr / year (NonRoad default values)
         self.activity_chipper = 465.0              # hr / year (NonRoad default values)
                 
-#Chipper
+        #Chipper
         self.hrs_per_dt_chipper = 1/1905.22627 #cubic feet per hour
-#Loader, assumed to be a lower hp chipper 
+        #Loader, assumed to be a lower hp chipper 
         self.hrs_per_dt_loader = 1/1998.81 # cubic feet per hour
      
-
- 
-    
+    '''
+    Calculate populations for each fips code.
+    @param fips: Fips county code. string
+    @param dat: Db data for harveste acres. list(string) 
+    '''
     def append_Pop(self, fips, dat):
         
         chipper_pop = round(self.hrs_per_dt_chipper * float(dat[2]) / (self.activity_chipper), 10)
@@ -216,17 +225,21 @@ class ForestPop(Population):
 
 
 
-
-#-----------------------------------------------------------------------
+'''
+Calculate corn grain populations. Irrigation gets calculated in another class.
+Non-harvest: Different tractors.
+Harvest: Combine.
+Transport: Tractor.
+'''
 class CornGrainPop(Population):   
 
     def __init__(self, cont, episodeYear, run_code):
         Population.__init__(self, cont, episodeYear, run_code)
        
-#Harvest hours per acre        
+        #Harvest hours per acre        
         self.transport_tractor = 29.5 * 60 # bu/min * 60 min/hr = bu/hr 
 
-#Non-Harvest hours per acre, from UT database
+        #Non-Harvest hours per acre, from UT database
         self.hrs_per_acre_convTill = 1.255           #hrs/acre conventional till with moldboard plow
         self.hrs_per_acre_redTill = 0.7377           #hrs/acre limited till
         self.hrs_per_acre_noTill = 0.5884           #hrs/acre no till
@@ -234,9 +247,14 @@ class CornGrainPop(Population):
                 
 
     def append_Pop(self, fips, dat):
-#TODO: CASE WHEN POP = 0.0
+        #TODO: CASE WHEN POP = 0.0
+        '''
+        @deprecated: this is not a 10 year cycle!
         harv_ac = dat[2] * 0.1    #10% of acres in each year of the 10-yr production cycle
-        prod = dat[3] / 10.0      #Production at maturity                   
+        prod = dat[3] / 10.0 
+        '''
+        harv_ac = dat[2]     
+        prod = dat[3]                  
         # non harvest model.
         if self.run_code.endswith('N'):        
             self.__setNonHarvPopFile__(fips, harv_ac, prod)
@@ -247,7 +265,11 @@ class CornGrainPop(Population):
             pass
 
 
-
+    '''
+    Calculates tractor and combine populations for transport and harvest.
+    @attention: why is prod not being used?
+    shouldn't scenario_yield = prod / harv_ac?
+    '''
     def __setHarvPopFile__(self, fips, harv_ac, prod):
         ##convert from bu/acre to dt/acre
         scenario_yield = harv_ac * (56.0) * (1.0-0.155) / 2000.0
@@ -257,6 +279,7 @@ class CornGrainPop(Population):
         #calculate population
         #EDIT 12.07.12 - REDUCED COMBINE HRS/ACRE BY 10% DUE TO TRANSPORT CART
         pop_combine = round((hours_per_acre_combine * 0.9) * harv_ac / (self.activity_combine), 10)
+        # [(acre) / (bu/hr)] * (acre) / (hr/year)
         pop_transport = (scenario_yield / self.transport_tractor) * harv_ac / (self.activity_tractor)    
                        
         lines = """%s       %s 2270005015 Dsl - Agricultural Tractors                100   175 133.6  4667  DEFAULT        %s
@@ -265,10 +288,13 @@ class CornGrainPop(Population):
 
         self.pop_file.writelines(lines)
 
-
-
+    '''
+    Calculates tractors for non-harvest.
+    Either conventional, reduced, and non till.
+    '''
     def __setNonHarvPopFile__(self, fips, harv_ac, prod):
         if self.run_code.endswith('CN'):
+            #  pop = (hrs/acre) * (acre) / (hr/year) = year?
             pop_conv_till = self.hrs_per_acre_convTill * harv_ac / (self.activity_tractor)
             lines = """%s       %s 2270005015 Dsl - Agricultural Tractors                175   300 236.5  4667  DEFAULT        %s
 """ % (fips, self.episodeYear, pop_conv_till)
@@ -289,24 +315,9 @@ class CornGrainPop(Population):
 
 
 
-
-
 '''
-****************
-**    Note    **
-****************
-I changed the indicator from being part of the class alo,
-to being detatched and only here. Not sure how this will affect it.
-Here is how it was before:
-
-__init__(.., alo):
-    self.alo = alo
-
-then was through out as
-self.alo.inicatorTotal
-
+Calculates the population of irrigation machines for harvesting corn grain.
 '''
-#-----------------------------------------------------------------------
 class CornGrainIrrigationPop(Population):   
     """
     Use multiple inheritance to get the total harvested acres from the allocate file to calculate population.
@@ -330,7 +341,8 @@ class CornGrainIrrigationPop(Population):
         Population.__init__(self, cont, episodeYear, run_code)
     
     '''
-    @attention: why does this have a different initialize then from the main Population class?
+    @param dat: All of the data.
+    Saved for later. 
     ''' 
     def initializePop(self, dat):
         Population.initializePop(self, dat)

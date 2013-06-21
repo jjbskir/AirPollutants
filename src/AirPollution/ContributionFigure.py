@@ -102,10 +102,8 @@ class ContributionAnalysis():
     @param feedstock: Type of feedstock ('CG','SG','CS','WS','FR')   
     """
     def makePlots(self, ax, query, fNum, fColor, fMarker, feedstock):
-        
+                
         query.getQuery()
-        print feedstock
-        print query.queryString
         
         if query.queryString.startswith('No'):
             pass    

@@ -82,6 +82,15 @@ class EmissionsPerGallon():
         for fNum, feedstock in enumerate(feedstockList):
             '''
             queryTable = summedemissions
+            emmisions = (pollutant lbs) / ( (feed stock lbs) * (gallons / feed stock lb) )
+            emmisions = (pollutant lbs / gallons)
+            SELECT (%s) / (prod * %s * 1e-6) FROM %s.%s WHERE prod > 0.0 AND feedstock ilike '%s';
+            % (pollutant, EtOHVals[fNum], self.db.schema, queryTable, feedstock)
+           
+            emmissions per acre = (pollutant lbs) / (total acres)
+            emmissions = pollutant / harv_ac
+            SELECT (%s) / (harv_ac) FROM %s.%s WHERE harv_ac > 0.0 AND feedstock ilike '%s';
+            % (pollutant,  self.db.schema, queryTable, feedstock)
             '''
             
             query = """

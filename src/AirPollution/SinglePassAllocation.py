@@ -4,6 +4,16 @@ import SaveDataHelper
 Used to update database to account for single pass machines when harvesting corn.
 Before one pass was for the corn itself and the next pass was to pick up the leftovers on the ground.
 In the future this may occur with one pass.
+
+
+The second query is never called.
+The corn stover and wheat straw are being modeled for 2022. In that year
+we predict a single pass system that will use a 540 hp vehicle to harvest
+both the cs, ws, and corn grain. But we are only multiplying the cs and ws
+by the single pass allocation because we are looking at corn grain data in
+the year 2011. Data is being gathered for corn grain in 2022. When we get this data,
+then we will let allocateCG = True and multiply the corn grain data by it's
+single pass allocation.
 '''
 class SinglePassAllocation(SaveDataHelper.SaveDataHelper):
     
@@ -19,14 +29,11 @@ class SinglePassAllocation(SaveDataHelper.SaveDataHelper):
         so the second query is never made either...
         '''
         # weather to do corn grain or residue.
+        # leave as is until corn grain data for 2022 is obtained.
         self.allocateCG = False
         
         residues = ['cs','ws']
         
-        '''
-        @attention: should be able to combine the queries into one query. 
-        The second query might never be called...
-        '''
         #define corn stover query - 380/540
         for r in residues: 
             query = """
@@ -49,9 +56,10 @@ class SinglePassAllocation(SaveDataHelper.SaveDataHelper):
             self._executeQuery(query)
             
         #define corn grain query - 160/540
+        # do not use this until corn grain data for 2022 is obtained.
         if self.allocateCG:
             query = """
-                UPDATE """+r+"""_raw
+                UPDATE cs_raw
                 SET
                     fuel_consumption = fuel_consumption * """+self.cornGrainAllocation+""",
                     thc = thc * """+self.cornGrainAllocation+""",

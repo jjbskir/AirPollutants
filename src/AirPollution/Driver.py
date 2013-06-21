@@ -158,11 +158,11 @@ class Driver:
     '''
     Create and populate the schema with the emissions inventory.   
     '''
-    def saveData(self):
+    def saveData(self, fertFeedStock, fertDist, pestFeed):
         print 'Saving results to database...'
         # initialize database objects
-        Fert = Fertilizer.Fertilizer(self.cont) 
-        Chem = Chemical.Chemical(self.cont)
+        Fert = Fertilizer.Fertilizer(self.cont, fertFeedStock, fertDist) 
+        Chem = Chemical.Chemical(self.cont, pestFeed)
         Comb = CombustionEmissions.CombustionEmissions(self.cont)
         Update = UpdateDatabase.UpdateDatabase(self.cont)
         FugDust = FugitiveDust.FugitiveDust(self.cont)
@@ -175,6 +175,7 @@ class Driver:
                 pass
             else:
                 feedstockList.append(run_code[0:2])
+        
         
     #----------------------------------------------------------------
         #Create tables, Populate Fertilizer & Chemical tables.  

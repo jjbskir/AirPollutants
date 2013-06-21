@@ -91,6 +91,7 @@ class ScenarioOptions:
     query database for appropriate production data based on run_code
     @param run_code: current run code to know what data to query from the db. 
     @return: query to be executed.
+    @attention: propbably do not need to be querying the state from county_attributes, maybe remove later.
     '''            
     def _getQuery(self, run_code):
         query = None
@@ -98,6 +99,7 @@ class ScenarioOptions:
         if run_code.startswith('CG'):
             
             # query conventional till data. For specific state and county.
+            # fips, state, harv_ac, prod, yield
             if run_code.startswith('CG_C'):
                 query = """select ca.fips, ca.st, dat.convtill_harv_ac, dat.convtill_prod, dat.convtill_yield
                 from cg_data dat, """ + self.db.constantsSchema + """.county_attributes ca where dat.fips = ca.fips order by ca.fips asc"""

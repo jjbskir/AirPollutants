@@ -11,7 +11,7 @@ from src.AirPollution.Driver import Driver
    
 if __name__ == "__main__": 
     
-    
+    '''
     # scenario title.
     title = 'sgRun'
     # run codes.
@@ -28,14 +28,18 @@ if __name__ == "__main__":
                      'CG_ID','CG_IL',
                      'CG_IC','CG_IG'
                 ] 
+    
     # create databse.
     db = Database(title)
     qprocess = None
+    fertDist = None
+    fertFeed = {'fcs': True, 'fws': True, 'fcg': True, 'fsg': True}
+    pestFeed = {'pcg': True, 'psg': True}
     # run program
     d = Driver(title, run_codes, db)
     #d.setupNONROAD()
     #d.runNONROAD(qprocess)
-    d.saveData()
+    d.saveData(fertFeed, fertDist, pestFeed)
     '''
     
     db = Database(None)
@@ -45,5 +49,8 @@ if __name__ == "__main__":
     myController = Controller(m)
     myController.show()
     sys.exit(app.exec_()) 
-    '''
+    
+    
+    
+
     

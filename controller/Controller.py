@@ -112,18 +112,24 @@ class Controller(QtGui.QMainWindow):
     '''
     Run a new model.
     @param inputs: Inputs from the NewModel view. 
-    A dictionary with various values such as title and run codes. 
+    A dictionary with various values such as title and run codes. dict(string, list)
     '''
     def _runNewModel(self, inputs):
         self.statusBar().showMessage('Starting New Model')  
         inputs = Inputs(inputs)
+        print inputs.pestFeed
         # only used for validation purposes. Are boolean.
-        title = self.validate.title(inputs.title)
-        run_codes = self.validate.runCodes(inputs.run_codes)
-        db = self.model.db
-        db.schema = inputs.title
+        self.validate.title(inputs.title)
+        self.validate.runCodes(inputs.run_codes)
+        self.validate.fertDist(inputs.fertDist)
+        self.validate.ferts(inputs.ferts)
+        self.validate.pest(inputs.pestFeed)
         # make sure all of the variables to run the model have been created.
-        if title and db and run_codes:
+        if not self.validate.errors:
+            self.statusBar().showMessage('Initiating Air Model.')    
+            # get db and add schema
+            db = self.model.db
+            db.schema = inputs.title
             # create the subprocess module that will run NONROAD in the background.
             self.qprocess = QtCore.QProcess(self)
             # send signal when subprocess has started.
@@ -136,9 +142,15 @@ class Controller(QtGui.QMainWindow):
             self.qprocess.error.connect(self._processError)
             # create air model.
             self.airModel = Driver(inputs.title, inputs.run_codes, db)
-            self.airModel.setupNONROAD()
+            #self.airModel.setupNONROAD()
             # create progress bar before running NONROAD model, to keep track of progress.
             self.timer = 0
+            #create a global fertilizer to pass to the model.
+            self.fertDist = inputs.fertDist
+            # weather each feed stock should calculate emmisions from fertilizers.
+            self.ferts = inputs.ferts
+            # weather some feedstocks should calculate emmisions from pesticides.
+            self.pestFeed = inputs.pestFeed
             # grab the total number of files that need to be ran.
             batchFiles = self.airModel.batch.getBatchFiles()
             self.bar = QtGui.QProgressBar()
@@ -147,7 +159,10 @@ class Controller(QtGui.QMainWindow):
             self.bar.setWindowTitle("NONROAD Progress")
             self.bar.show()
             # run NONROAD.
-            self.airModel.runNONROAD(self.qprocess)
+            #self.airModel.runNONROAD(self.qprocess)
+            
+            self.airModel.saveData(self.ferts, self.fertDist, self.pestFeed)
+            
         # if not able to validate inputs. 
         else:
             self.statusBar().showMessage('ERROR: could not run model')  
@@ -185,7 +200,7 @@ class Controller(QtGui.QMainWindow):
     def _processSave(self):
         self.bar.close()
         self.statusBar().showMessage('Finished Running NONROAD')
-        self.airModel.saveData()
+        self.airModel.saveData(self.fertDist)
         self._newModel()
     
     '''

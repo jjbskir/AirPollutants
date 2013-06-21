@@ -7,28 +7,35 @@ Created from pesticides.
 '''
 class Chemical(SaveDataHelper.SaveDataHelper):
     
+    pcg, psg = 'pcg', 'psg'
+    
     '''
+    @param pestFeed: Dictionary of the two feed stocks and weather they should
+    run the pesticide code for them. dict(string) 
+    
     @attention: Only need db parts from OptionsScenario.
     will need schema variabls.
     '''
-    def __init__(self, cont):
+    def __init__(self, cont, pestFeed):
         SaveDataHelper.SaveDataHelper.__init__(self, cont)
         self.documentFile = "Chemical"
+        # pesticides.
+        self.pestFeed = pestFeed
          
     '''
     Find the feedstock and add emmissions if it is switch grass or corn grain.
     @param feed: Feed stock.
     '''
     def setChemical(self, feed):
-        
+        query = ''
         if feed == 'CG' or feed == 'SG': 
-            if feed == 'CG':
+            if feed == 'CG' and self.pestFeed[self.pcg]:
                 query = self.__cornGrain__()
                 
-            elif feed == 'SG':
+            elif feed == 'SG' and self.pestFeed[self.psg]:
                 query = self.__switchgrass__()
-                
-            self._executeQuery(query)
+            # if a query was made, execute it.
+            if query: self._executeQuery(query)
             
         
         
