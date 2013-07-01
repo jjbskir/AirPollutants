@@ -106,6 +106,8 @@ class Controller(QtGui.QMainWindow):
         self.newModel.procDone.connect(self._runNewModel)
         # set new model screen to main widget.
         self.setCentralWidget(self.newModel)
+        # close ferts.
+        self.newModel.closeAllFerts()
         # add status bar.
         self.statusBar().showMessage('Ready to Run New Model')
     
@@ -117,13 +119,22 @@ class Controller(QtGui.QMainWindow):
     def _runNewModel(self, inputs):
         self.statusBar().showMessage('Starting New Model')  
         inputs = Inputs(inputs)
-        print inputs.pestFeed
         # only used for validation purposes. Are boolean.
         self.validate.title(inputs.title)
         self.validate.runCodes(inputs.run_codes)
         self.validate.fertDist(inputs.fertDist)
         self.validate.ferts(inputs.ferts)
         self.validate.pest(inputs.pestFeed)
+        
+        print inputs.fertDist
+        print inputs.alloc
+        print ''
+        print inputs.run_codes
+        print inputs.ferts
+        print inputs.pestFeed
+        print ''
+        print inputs.operations
+        
         # make sure all of the variables to run the model have been created.
         if not self.validate.errors:
             self.statusBar().showMessage('Initiating Air Model.')    
@@ -151,6 +162,9 @@ class Controller(QtGui.QMainWindow):
             self.ferts = inputs.ferts
             # weather some feedstocks should calculate emmisions from pesticides.
             self.pestFeed = inputs.pestFeed
+            # which operations to use for run.
+            self.operations = inputs.operations
+            self.alloc = inputs.alloc
             # grab the total number of files that need to be ran.
             batchFiles = self.airModel.batch.getBatchFiles()
             self.bar = QtGui.QProgressBar()
@@ -161,7 +175,7 @@ class Controller(QtGui.QMainWindow):
             # run NONROAD.
             #self.airModel.runNONROAD(self.qprocess)
             
-            self.airModel.saveData(self.ferts, self.fertDist, self.pestFeed)
+            self.airModel.saveData(self.ferts, self.fertDist, self.pestFeed, self.operations, self.alloc)
             
         # if not able to validate inputs. 
         else:

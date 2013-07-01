@@ -15,6 +15,7 @@ import Fertilizer
 import SinglePassAllocation 
 import NEIComparison
 import EmissionsPerGalFigure
+from EmissionsPerAcreFigure import EmissionsPerAcreFigure
 import RatioToNEIFigure
 import ContributionFigure
 
@@ -101,8 +102,10 @@ class Driver:
                 The db table is ordered alphabetically.
                 The search will look through a state. When the state changes in the table,
                 then the loop will go to the else, closing the old files. and initializing new files.
-                '''              
+                '''  
+                # dat[1] is the state.            
                 if dat[1] == state:
+                    # indicator is harvested acres. Except for FR when it is produce.
                     indicator = dat[2]
                     alo.writeIndicator(fips, indicator)
                     pop.append_Pop(fips, dat)
@@ -156,14 +159,22 @@ class Driver:
         self.batch.run(qprocess) 
         
     '''
-    Create and populate the schema with the emissions inventory.   
+    Create and populate the schema with the emissions inventory.  
+    @param fertFeed: Dictionary containing each feedstock and weather to do fertilizer calculations. 
+    dict(boolean)
+    @param fertDist: The five numbers must add to 1 b/c they represent the percentage of
+    each of the five fertilizers used. list(float)  
+    @param pestFeed: Weather a feedstock should calculate the pesticides used. A dictionary of
+    feedstocks to what to do. dict(boolean)
+    @param operationDict: Dictionary containing each feedstock. Each feedstock contains a dictionary
+    of harvest, non-harvest, and transport and weather to calculate them. dict(dict(boolean))
     '''
-    def saveData(self, fertFeedStock, fertDist, pestFeed):
+    def saveData(self, fertFeed, fertDist, pestFeed, operationDict, alloc):
         print 'Saving results to database...'
         # initialize database objects
-        Fert = Fertilizer.Fertilizer(self.cont, fertFeedStock, fertDist) 
+        Fert = Fertilizer.Fertilizer(self.cont, fertFeed, fertDist) 
         Chem = Chemical.Chemical(self.cont, pestFeed)
-        Comb = CombustionEmissions.CombustionEmissions(self.cont)
+        Comb = CombustionEmissions.CombustionEmissions(self.cont, operationDict, alloc)
         Update = UpdateDatabase.UpdateDatabase(self.cont)
         FugDust = FugitiveDust.FugitiveDust(self.cont)
         NEI = NEIComparison.NEIComparison(self.cont)
@@ -232,6 +243,7 @@ class Driver:
             #create tables that contain a ratio to NEI
             for feedstock in feedstockList:
                 NEI.createNEIComparison(feedstock)
+            
     #----------------------------------------------------------------
     
     
@@ -239,11 +251,18 @@ class Driver:
             #create graphics and numerical summary 
             
             #Contribution Analysis
+            print 'Creating emissions contribution figure.'
             ContributionFigure.ContributionAnalysis(self.cont)
             
             #Emissions Per Gallon
+            print 'Creating emissions per gallon figure.'
             EmissionsPerGalFigure.EmissionsPerGallon(self.cont)
             
+            # Emissions per a acre figure.
+            print 'Creating emissions per acre figure.'
+            EmissionsPerAcreFigure(self.cont)
+            
+            '''
             #Ratio to NEI
             ratioNEI = RatioToNEIFigure.RatioToNEIFig(self.cont)
             for feedstock in feedstockList:
@@ -254,6 +273,8 @@ class Driver:
                 pass
             
             ratioNEI.f.close()
+            '''
+        
     #----------------------------------------------------------------
                     
         print 'Successful completion of model run.'

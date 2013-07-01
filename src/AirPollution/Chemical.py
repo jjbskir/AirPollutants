@@ -7,7 +7,7 @@ Created from pesticides.
 '''
 class Chemical(SaveDataHelper.SaveDataHelper):
     
-    pcg, psg = 'pcg', 'psg'
+    pcg, psg = 'CGP', 'SGP'
     
     '''
     @param pestFeed: Dictionary of the two feed stocks and weather they should

@@ -203,6 +203,7 @@ class ForestPop(Population):
     Calculate populations for each fips code.
     @param fips: Fips county code. string
     @param dat: Db data for harveste acres. list(string) 
+    or is it the produce?
     '''
     def append_Pop(self, fips, dat):
         
@@ -272,7 +273,14 @@ class CornGrainPop(Population):
     '''
     def __setHarvPopFile__(self, fips, harv_ac, prod):
         ##convert from bu/acre to dt/acre
-        scenario_yield = harv_ac * (56.0) * (1.0-0.155) / 2000.0
+        '''
+        @deprecated: Changed scenario yield = harv_ac * constant, 
+        to (prod / harv_ac) * constant. 
+        Also has to make sure not dividing by 0.
+        '''
+        scenario_yield = 0
+        if harv_ac > 0:
+            scenario_yield = (prod / harv_ac) * (56.0) * (1.0-0.155) / 2000.0
 
         hours_per_acre_combine = self._getCombineHoursPerAcre(scenario_yield)
 
@@ -592,7 +600,7 @@ class SwitchgrassPop(Population):
         
     def __getTransportHrsPerAcre__(self, harv_ac, prod):
         
-#TODO: This methodology needs to be double checked still.      
+        #TODO: This methodology needs to be double checked still.      
         if self.run_code.endswith('T1'): self.yield_factor = 1/3.0
         
         elif self.run_code.endswith('T2'): self.yield_factor = 2/3.0

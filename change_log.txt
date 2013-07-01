@@ -2,6 +2,7 @@ Change Log.
 Major changes to the model.
 
 
+
 6/1/2013
 Population.SwitchgrassPop.append_Pop() line 524
 /code/
@@ -37,6 +38,8 @@ prod = dat[3] / 10.0
 harv_ac = dat[2]     
 prod = dat[3]
 /end/
+
+
 
 Fertilizer.getFrtDistribution() line 59
 Added function in order to either collect fertilizer distribution from the db,
@@ -76,3 +79,39 @@ self.LHV = 128450.0 / 1e6
 self.NH3_EF = 0.68
 self.vocConversion = 1.053
 /end/
+
+
+
+6/26/2013
+Population.CorngGrainPop.__setHarvPopFile__() line 280
+comment: Was calculating yield incorrectly.
+Should be yield = (produce / harvested acres) * conversion constant.
+prior scenario_yield = harv_ac * (56.0) * (1.0-0.155) / 2000.0
+Now it equals to scenario_yield = (prod / harv_ac) * (56.0) * (1.0-0.155) / 2000.0
+/Code/
+scenario_yield = 0
+if harv_ac > 0:
+	scenario_yield = (prod / harv_ac) * (56.0) * (1.0-0.155) / 2000.0
+/end/
+
+
+
+CombustionEmissions.populateTables() line 106
+Comment: allocates non-harvest emmissions form corn grain to
+corn stover and wheat straw.
+/code/
+# allocate non harvest emmisions from cg to cs and ws.
+if operation and operation[0] == 'N' and feedstock == 'CG': 
+   # add to cs.
+   if self.operationDict['CS'][operation[0]]:
+		self._record('CS', row[0], SCC, HP, FuelCons, THC, VOC, CO, NOx, CO2, SO2, PM10, PM25, NH3, description, run_code, writer, queries, self.alloc)
+	# add to ws. 
+        elif self.operationDict['WS'][operation[0]]:  
+        	self._record('WS', row[0], SCC, HP, FuelCons, THC, VOC, CO, NOx, CO2, SO2, PM10, PM25, NH3, description, run_code, writer, queries, self.alloc)
+        # add to corn grain.
+        self._record(feedstock, row[0], SCC, HP, FuelCons, THC, VOC, CO, NOx, CO2, SO2, PM10, PM25, NH3, description, run_code, writer, queries, self.alloc)
+    # don't change allocation.
+    else: 
+    	self._record(feedstock, row[0], SCC, HP, FuelCons, THC, VOC, CO, NOx, CO2, SO2, PM10, PM25, NH3, description, run_code, writer, queries)
+/end/
+

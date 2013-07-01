@@ -62,22 +62,23 @@ class Validation:
     Validate fertilizer distribution.
     Must all be numbers and must sum up to 1.
     Or they can leave all the slots blank.
-    @param fertDist: Fertilizer distribution the user enterd. list(string)
+    @param fertDist: Fertilizer distribution the user enterd for 4 feedstocks. dict(string: list(string))
     @return: True if criteria are met, false otherwise. boolean
     '''
-    def fertDist(self, fertDist):
-        # if they don't enter anything, then return true.
-        if not fertDist:
-            return True
-        # make sure all of the entries are numbers and sum to 1.
-        sumDist = 0.0
-        try:
-            for fert in fertDist:
-                sumDist += float(fert)
-        except: 
-            return self.error('Must enter a number for fertilizer distributions.') 
-        if sumDist != 1:
-            return self.error('Distribion must sum to 1.') 
+    def fertDist(self, fertDists):
+        for fertDist in fertDists.values():
+            # if they don't enter anything, then return true.
+            if not fertDist:
+                return True
+            # make sure all of the entries are numbers and sum to 1.
+            sumDist = 0.0
+            try:
+                for fert in fertDist:
+                    sumDist += float(fert)
+            except: 
+                return self.error('Must enter a number for fertilizer distributions.') 
+            if sumDist != 1:
+                return self.error('Distribion must sum to 1.') 
     
     '''
     Fertilizer validation. Should validate on it's own. Would only be set off

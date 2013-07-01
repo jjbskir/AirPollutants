@@ -10,7 +10,7 @@ class Fertilizer(SaveDataHelper.SaveDataHelper):
     # order of fertilizer list.
     faa, fan, fas, fur, fns = 0, 1, 2, 3, 4
     # order of feed stocks in the fertilizer list.
-    fcs, fws, fcg, fsg = 'fcs', 'fws', 'fcg', 'fsg'
+    fcs, fws, fcg, fsg = 'CSF', 'WSF', 'CGF', 'SGF'
     
     '''
     @attention: should seperate db object so that the overhang of the class
@@ -49,28 +49,33 @@ class Fertilizer(SaveDataHelper.SaveDataHelper):
                 query = self.__cornGrain__()
                 
             elif feed == 'SG' and self.fertFeedStock[self.fsg]:
-                query = self.__switchgrass__()
+                query = self.__switchgrass__(feed)
             # if a query was called execute it.
             if query: self._executeQuery(query)
     
     '''
     Get fertilizer distribution. The user can either input their own distribution, 
     or use the predefined distribution on the db.
-    @param fertDistribution: Distribution of the the five different fertilizers. 
+    @param fertDistribution: Distribution of the the five different fertilizers. dict(string: list(string)
     @return: Distribution of the five different fertilizers as a percentage. Must sum up to 1.
     Order: annhydrous_amonia, ammonium_nitrate, ammonium_sulfate, urea, nsol. (list(string))
     '''    
-    def getFrtDistribution(self, fertDistribution=False):
-        if not fertDistribution:
-            query = """SELECT * 
-                    FROM """ + self.db.constantsSchema + """.n_fert_distribution""" 
-            fertDistribution = self.db.output(query, self.db.constantsSchema)
-            # convert db data to usable strings.
-            fertDistribution = [str(f) for f in fertDistribution[0]]
-            return fertDistribution
-        else: 
-            return fertDistribution
-        
+    def getFrtDistribution(self, fertDistributions):
+        fertFinal = {}
+        for feed, fertDistribution in fertDistributions.items():
+            if fertDistribution: 
+                fertFinal[feed] = fertDistribution
+            else:
+                if feed is not 'SG':
+                    query = """SELECT * 
+                            FROM """ + self.db.constantsSchema + """.n_fert_distribution""" 
+                    fertDist = self.db.output(query, self.db.constantsSchema)
+                    # convert db data to usable strings.
+                    fertDist = [str(f) for f in fertDist[0]]
+                else: fertDist = ['0', '0', '0', '1', '0']
+                fertFinal[feed] = fertDist
+        return fertFinal
+                
     def __cornStover__(self, feed):
         '''
         why divide by 2000?
@@ -88,9 +93,9 @@ INSERT INTO """ + feed + """_nfert
         --------------------------------------------------------------------------
         SELECT feed.fips, 
 
-        ((N_app.""" + feed + """ / 2000.0) * (""" + self.fertDist[self.fur] + """ * nfert.nox_ur) * 0.90718474 / 2000.0 * feed.prod) AS "NOX", 
+        ((N_app.""" + feed + """ / 2000.0) * (""" + self.fertDist[feed][self.fur] + """ * nfert.nox_ur) * 0.90718474 / 2000.0 * feed.prod) AS "NOX", 
 
-        ((N_app.""" + feed + """ * 0.90718474 / 2000.0) * (""" + self.fertDist[self.fur] + """ * nfert.nh3_ur) * feed.prod * 17.0 / 14.0) AS "NH3",
+        ((N_app.""" + feed + """ * 0.90718474 / 2000.0) * (""" + self.fertDist[feed][self.fur] + """ * nfert.nh3_ur) * feed.prod * 17.0 / 14.0) AS "NH3",
 
         (2801700004) AS SCC,
 
@@ -112,9 +117,9 @@ INSERT INTO """ + feed + """_nfert
 
         SELECT feed.fips, 
 
-        ((N_app.""" + feed + """ / 2000.0) * (""" + self.fertDist[self.fns] + """ * nfert.nox_nsol) * 0.90718474 / 2000.0 * feed.prod) AS "NOX", 
+        ((N_app.""" + feed + """ / 2000.0) * (""" + self.fertDist[feed][self.fns] + """ * nfert.nox_nsol) * 0.90718474 / 2000.0 * feed.prod) AS "NOX", 
 
-        ((N_app.""" + feed + """ * 0.90718474 / 2000.0) * (""" + self.fertDist[self.fns] + """ * nfert.nh3_nsol) * feed.prod * 17.0 / 14.0) AS "NH3",
+        ((N_app.""" + feed + """ * 0.90718474 / 2000.0) * (""" + self.fertDist[feed][self.fns] + """ * nfert.nh3_nsol) * feed.prod * 17.0 / 14.0) AS "NH3",
 
         (2801700003) AS SCC,
 
@@ -136,9 +141,9 @@ INSERT INTO """ + feed + """_nfert
 
         SELECT feed.fips, 
 
-        ((N_app.""" + feed + """ / 2000.0) * (""" + self.fertDist[self.faa] + """ * nfert.nox_aa) * 0.90718474 / 2000.0 * feed.prod) AS "NOX", 
+        ((N_app.""" + feed + """ / 2000.0) * (""" + self.fertDist[feed][self.faa] + """ * nfert.nox_aa) * 0.90718474 / 2000.0 * feed.prod) AS "NOX", 
 
-        ((N_app.""" + feed + """ * 0.90718474 / 2000.0) * (""" + self.fertDist[self.faa] + """ * nfert.nh3_aa) * feed.prod * 17.0 / 14.0) AS "NH3",
+        ((N_app.""" + feed + """ * 0.90718474 / 2000.0) * (""" + self.fertDist[feed][self.faa] + """ * nfert.nh3_aa) * feed.prod * 17.0 / 14.0) AS "NH3",
 
         (2801700001) AS SCC,
 
@@ -160,9 +165,9 @@ INSERT INTO """ + feed + """_nfert
 
         SELECT feed.fips, 
 
-        ((N_app.""" + feed + """ / 2000.0) * (""" + self.fertDist[self.fan] + """ * nfert.nox_an) * 0.90718474 / 2000.0 * feed.prod) AS "NOX", 
+        ((N_app.""" + feed + """ / 2000.0) * (""" + self.fertDist[feed][self.fan] + """ * nfert.nox_an) * 0.90718474 / 2000.0 * feed.prod) AS "NOX", 
 
-        ((N_app.""" + feed + """ * 0.90718474 / 2000.0) * (""" + self.fertDist[self.fan] + """ * nfert.nh3_an) * feed.prod * 17.0 / 14.0) AS "NH3",
+        ((N_app.""" + feed + """ * 0.90718474 / 2000.0) * (""" + self.fertDist[feed][self.fan] + """ * nfert.nh3_an) * feed.prod * 17.0 / 14.0) AS "NH3",
 
         (2801700005) AS SCC,
 
@@ -184,9 +189,9 @@ INSERT INTO """ + feed + """_nfert
 
         SELECT feed.fips,
 
-        ((N_app.""" + feed + """ / 2000.0) * (""" + self.fertDist[self.fas] + """ * nfert.nox_as) * 0.90718474 / 2000.0 * feed.prod) AS "NOX", 
+        ((N_app.""" + feed + """ / 2000.0) * (""" + self.fertDist[feed][self.fas] + """ * nfert.nox_as) * 0.90718474 / 2000.0 * feed.prod) AS "NOX", 
 
-        ((N_app.""" + feed + """ * 0.90718474 / 2000.0) * (""" + self.fertDist[self.fas] + """ * nfert.nh3_as) * feed.prod * 17.0 / 14.0) AS "NH3",
+        ((N_app.""" + feed + """ * 0.90718474 / 2000.0) * (""" + self.fertDist[feed][self.fas] + """ * nfert.nh3_as) * feed.prod * 17.0 / 14.0) AS "NH3",
 
         (2801700006) AS SCC,
 
@@ -213,7 +218,7 @@ INSERT INTO """ + feed + """_nfert
     @attention: is the GROUP BY correct? sg.fips is the only row that is being selected.
     sg.prod, nfert.nox_nsol, nfert.nh3_nsol, N_app.SG are not. Should not affect query.
     '''
-    def __switchgrass__(self):
+    def __switchgrass__(self, feed):
         '''
         Nitrogen application (lbs/ton of N nutrients) * harvested lbs * emmisions of nsol * lbs active / lbs fertilizer * evaporation rate
         
@@ -221,23 +226,91 @@ INSERT INTO """ + feed + """_nfert
         lbs pollutant.
         '''
         fertQuery = """
-INSERT INTO sg_nfert 
+    INSERT INTO sg_nfert 
     (
+        --------------------------------------------------------------------------
+        --This query contains the Nitrogen Solutions Component
+        --------------------------------------------------------------------------
+        
         SELECT sg.fips,  
 
-        (12.519 / 2000.0 * sg.prod * (nfert.nox_nsol) * 0.907018474 / 2000.0 * 0.9) AS "NOx",
+        (N_app.""" + feed + """ / 2000.0 * sg.prod * (""" + self.fertDist[feed][self.fns] + """ * nfert.nox_nsol) * 0.907018474 / 2000.0 * 0.9) AS "NOx",
 
-        (12.519 * sg.prod * (nfert.nh3_nsol) * 0.907018474 / 2000.0 * 17.0 / 14.0 * 0.9) AS "NH3",
+        (N_app.""" + feed + """ * sg.prod * (""" + self.fertDist[feed][self.fns] + """ * nfert.nh3_nsol) * 0.907018474 / 2000.0 * 17.0 / 14.0 * 0.9) AS "NH3",
 
         (2801700003) AS SCC,
 
         'Nitrogen Solutions Fertilizer Emissions' AS "Description"
 
-    FROM  """ + self.db.productionSchema + """.sg_data sg, """ + self.db.constantsSchema + """.N_fert_EF nfert, """ + self.db.constantsSchema + """.CS_WS_SG_Napp N_app
+        FROM  """ + self.db.productionSchema + """.sg_data sg, """ + self.db.constantsSchema + """.N_fert_EF nfert, """ + self.db.constantsSchema + """.CS_WS_SG_Napp N_app
 
-    GROUP BY sg.fips, sg.prod,
-    nfert.nox_nsol, nfert.nh3_nsol, N_app.SG
+        GROUP BY sg.fips, sg.prod,
+        nfert.nox_nsol, nfert.nh3_nsol, N_app.SG
     )
+    UNION
+    (
+        --------------------------------------------------------------------------
+        --This query contains the Urea Component
+        --------------------------------------------------------------------------
+        
+        SELECT sg.fips,  
+
+        (N_app.""" + feed + """ / 2000.0 * sg.prod * (""" + self.fertDist[feed][self.fur] + """ * nfert.nox_ur) * 0.907018474 / 2000.0 * 0.9) AS "NOx",
+
+        (N_app.""" + feed + """ * sg.prod * (""" + self.fertDist[feed][self.fur] + """ * nfert.nh3_ur) * 0.907018474 / 2000.0 * 17.0 / 14.0 * 0.9) AS "NH3",
+
+        (2801700003) AS SCC,
+
+        'Nitrogen Solutions Fertilizer Emissions' AS "Description"
+
+        FROM  """ + self.db.productionSchema + """.sg_data sg, """ + self.db.constantsSchema + """.N_fert_EF nfert, """ + self.db.constantsSchema + """.CS_WS_SG_Napp N_app
+
+        GROUP BY sg.fips, sg.prod,
+        nfert.nox_ur, nfert.nh3_ur, N_app.SG
+    )
+    UNION
+    (
+        --------------------------------------------------------------------------
+        --This query contains the Ammonium Nitrate Component
+        --------------------------------------------------------------------------
+        
+        SELECT sg.fips,  
+
+        (N_app.""" + feed + """ / 2000.0 * sg.prod * (""" + self.fertDist[feed][self.fan] + """ * nfert.nox_an) * 0.907018474 / 2000.0 * 0.9) AS "NOx",
+
+        (N_app.""" + feed + """ * sg.prod * (""" + self.fertDist[feed][self.fan] + """ * nfert.nh3_an) * 0.907018474 / 2000.0 * 17.0 / 14.0 * 0.9) AS "NH3",
+
+        (2801700003) AS SCC,
+
+        'Nitrogen Solutions Fertilizer Emissions' AS "Description"
+
+        FROM  """ + self.db.productionSchema + """.sg_data sg, """ + self.db.constantsSchema + """.N_fert_EF nfert, """ + self.db.constantsSchema + """.CS_WS_SG_Napp N_app
+
+        GROUP BY sg.fips, sg.prod,
+        nfert.nox_an, nfert.nh3_an, N_app.SG
+    )
+    UNION
+    (
+        --------------------------------------------------------------------------
+        --This query contains the Ammonium Sulfate Component
+        --------------------------------------------------------------------------
+        
+        SELECT sg.fips,  
+
+        (N_app.""" + feed + """ / 2000.0 * sg.prod * (""" + self.fertDist[feed][self.fas] + """ * nfert.nox_as) * 0.907018474 / 2000.0 * 0.9) AS "NOx",
+
+        (N_app.""" + feed + """ * sg.prod * (""" + self.fertDist[feed][self.fas] + """ * nfert.nh3_as) * 0.907018474 / 2000.0 * 17.0 / 14.0 * 0.9) AS "NH3",
+
+        (2801700003) AS SCC,
+
+        'Nitrogen Solutions Fertilizer Emissions' AS "Description"
+
+        FROM  """ + self.db.productionSchema + """.sg_data sg, """ + self.db.constantsSchema + """.N_fert_EF nfert, """ + self.db.constantsSchema + """.CS_WS_SG_Napp N_app
+
+        GROUP BY sg.fips, sg.prod,
+        nfert.nox_as, nfert.nh3_as, N_app.SG
+    )
+    
 """
         return fertQuery
 
@@ -254,11 +327,11 @@ INSERT INTO cg_nfert
 
         (((n.Conventional_N * cd.convtill_harv_ac + 
            n.Conventional_N * reducedtill_harv_ac + 
-           n.NoTill_N * notill_harv_ac) / 2000.0) * (""" + self.fertDist[self.fur] + """ * nfert.nox_ur) * 0.90718474 / 2000.0) AS "NOX", 
+           n.NoTill_N * notill_harv_ac) / 2000.0) * (""" + self.fertDist['CG'][self.fur] + """ * nfert.nox_ur) * 0.90718474 / 2000.0) AS "NOX", 
 
         (((n.Conventional_N * cd.convtill_harv_ac + 
            n.Conventional_N * reducedtill_harv_ac + 
-           n.NoTill_N * notill_harv_ac) / 2000.0) * (""" + self.fertDist[self.fur] + """ * nfert.nh3_ur) * 0.90718474 * 17.0 / 14.0) AS "NH3",
+           n.NoTill_N * notill_harv_ac) / 2000.0) * (""" + self.fertDist['CG'][self.fur] + """ * nfert.nh3_ur) * 0.90718474 * 17.0 / 14.0) AS "NH3",
 
         (2801700004) AS SCC,
 
@@ -283,11 +356,11 @@ INSERT INTO cg_nfert
 
         (((n.Conventional_N * cd.convtill_harv_ac + 
            n.Conventional_N * reducedtill_harv_ac + 
-           n.NoTill_N * notill_harv_ac) / 2000.0) * (""" + self.fertDist[self.fns] + """ * nfert.nox_nsol) * 0.90718474 / 2000.0) AS "NOX", 
+           n.NoTill_N * notill_harv_ac) / 2000.0) * (""" + self.fertDist['CG'][self.fns] + """ * nfert.nox_nsol) * 0.90718474 / 2000.0) AS "NOX", 
 
         (((n.Conventional_N * cd.convtill_harv_ac +
            n.Conventional_N * reducedtill_harv_ac + 
-           n.NoTill_N * notill_harv_ac) / 2000.0) * (""" + self.fertDist[self.fns] + """ * nfert.nh3_nsol) * 0.90718474 * 17.0 / 14.0) AS "NH3",
+           n.NoTill_N * notill_harv_ac) / 2000.0) * (""" + self.fertDist['CG'][self.fns] + """ * nfert.nh3_nsol) * 0.90718474 * 17.0 / 14.0) AS "NH3",
 
         (2801700003) AS SCC,
 
@@ -312,11 +385,11 @@ INSERT INTO cg_nfert
 
         (((n.Conventional_N * cd.convtill_harv_ac + 
            n.Conventional_N * reducedtill_harv_ac + 
-           n.NoTill_N * notill_harv_ac) / 2000.0) * (""" + self.fertDist[self.faa] + """ * nfert.nox_aa) * 0.90718474 / 2000.0) AS "NOX", 
+           n.NoTill_N * notill_harv_ac) / 2000.0) * (""" + self.fertDist['CG'][self.faa] + """ * nfert.nox_aa) * 0.90718474 / 2000.0) AS "NOX", 
 
         (((n.Conventional_N * cd.convtill_harv_ac + 
            n.Conventional_N * reducedtill_harv_ac + 
-           n.NoTill_N * notill_harv_ac) / 2000.0) * (""" + self.fertDist[self.faa] + """ * nfert.nh3_aa) * 0.90718474 * 17.0 / 14.0) AS "NH3",
+           n.NoTill_N * notill_harv_ac) / 2000.0) * (""" + self.fertDist['CG'][self.faa] + """ * nfert.nh3_aa) * 0.90718474 * 17.0 / 14.0) AS "NH3",
 
         (2801700001) AS SCC,
 
@@ -341,11 +414,11 @@ INSERT INTO cg_nfert
 
         (((n.Conventional_N * cd.convtill_harv_ac + 
            n.Conventional_N * reducedtill_harv_ac + 
-           n.NoTill_N * notill_harv_ac) / 2000.0) * (""" + self.fertDist[self.fan] + """ * nfert.nox_an) * 0.90718474 / 2000.0) AS "NOX", 
+           n.NoTill_N * notill_harv_ac) / 2000.0) * (""" + self.fertDist['CG'][self.fan] + """ * nfert.nox_an) * 0.90718474 / 2000.0) AS "NOX", 
 
         (((n.Conventional_N * cd.convtill_harv_ac + 
            n.Conventional_N * reducedtill_harv_ac + 
-           n.NoTill_N * notill_harv_ac) / 2000.0) * (""" + self.fertDist[self.fan] + """ * nfert.nh3_an) * 0.90718474 * 17.0 / 14.0) AS "NH3",
+           n.NoTill_N * notill_harv_ac) / 2000.0) * (""" + self.fertDist['CG'][self.fan] + """ * nfert.nh3_an) * 0.90718474 * 17.0 / 14.0) AS "NH3",
 
         (2801700005) AS SCC,
 
@@ -370,11 +443,11 @@ INSERT INTO cg_nfert
 
         (((n.Conventional_N * cd.convtill_harv_ac + 
            n.Conventional_N * reducedtill_harv_ac + 
-           n.NoTill_N * notill_harv_ac) / 2000.0) * (""" + self.fertDist[self.fas] + """ * nfert.nox_as) * 0.90718474 / 2000.0) AS "NOX", 
+           n.NoTill_N * notill_harv_ac) / 2000.0) * (""" + self.fertDist['CG'][self.fas] + """ * nfert.nox_as) * 0.90718474 / 2000.0) AS "NOX", 
 
         (((n.Conventional_N * cd.convtill_harv_ac + 
            n.Conventional_N * reducedtill_harv_ac + 
-           n.NoTill_N * notill_harv_ac) / 2000.0) * (""" + self.fertDist[self.fas] + """ * nfert.nh3_as) * 0.90718474 * 17.0 / 14.0) AS "NH3",
+           n.NoTill_N * notill_harv_ac) / 2000.0) * (""" + self.fertDist['CG'][self.fas] + """ * nfert.nh3_as) * 0.90718474 * 17.0 / 14.0) AS "NH3",
 
         (2801700006) AS SCC,
 

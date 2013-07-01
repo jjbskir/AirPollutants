@@ -184,6 +184,7 @@ where a.fips = t.fips and t.x > 0.0 and a.x > 0.0;
 
                 fertSum as (select distinct fips, sum(%s) as x
                 from %s.%s group by fips)
+                
                 select (%s) as x
                 FROM rawSum raw, fertSum fert %s 
                 and raw.x > 0.0 and fert.x > 0.0;

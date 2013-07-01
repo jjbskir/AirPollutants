@@ -46,17 +46,20 @@ population or land area.  The format is as follows.
 
 
     '''
+    Allocates land usage for each county.
     This function writes the appropriate information to each line of the file
     The indicator value is grabbed from the database in Options.py
-    @params: allocation file name, fips number, and indicator value.
+    @param fips: County code.
+    @param indicator: Harvested acres per a county. 
     ''' 
     def writeIndicator(self, fips, indicator):
+        # FR data is in produce, not acres. Need to convert into land use.
         if self.run_code.startswith('FR'):
             #convert input -> dry ton_s into cubic feet
             # (x dry_ton) * (2000 lbs / ton) * (1 ft^3 / 30 lbs) --> BT2 Report page 18 footnote.
             indicator = float(indicator) * 2000.0 * 1.0 / 30.0
             lines = """LOG  %s      %s    %s\n""" % (fips, self.episodeYear, indicator)
-            
+        # add harvested acres directly to file.
         else:
             lines = """FRM  %s      %s    %s\n""" % (fips, self.episodeYear, indicator)
         

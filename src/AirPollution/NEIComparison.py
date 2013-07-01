@@ -48,7 +48,13 @@ nh3    float);"""
         self._executeQuery(query)
         
         
-            
+    '''
+    Create summed dimmensions table in the db.
+    @attention: fr should have a harv_ac.
+
+    select ca.fips, ca.st, dat.fed_minus_55 
+    from constantsSchema.county_attributes ca, fr_data dat where dat.fips = ca.fips"""
+    ''' 
     def createSummedEmissionsTable(self, feedstock):
         
         if feedstock == 'CG':

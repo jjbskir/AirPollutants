@@ -59,6 +59,7 @@ class RatioToNEIFig():
     #-----------------Model Forest Residue scenario
                 queryTable = "fr_neiratio"    
                 
+            print queryTable
                 
             axisTitle = 'Ratio (R) of %s emissions to 2008 NEI' % (feedstockList[feedstock])
     #-----------------PART 1, EXTRACT DATA FROM THE DATABASE-----------------    
@@ -97,7 +98,6 @@ class RatioToNEIFig():
     
     #        print figure to a .png file (small file size)
     #        canvas.print_figure(queryTable + '.tiff')
-            print queryTable
         
             
         
@@ -300,19 +300,4 @@ class RatioToNEIFig():
                 
         return threshTable
     
-    
-    
-        
-if __name__ == "__main__":  
-    # used for testing.
-    import Container
-    import Database as db
-    
-    modelRunTitle = "AllFeed"
-    cont = Container.Container()
-    cont.set('modelRunTitle', modelRunTitle)
-    cont.set('path', 'C:/Nonroad/%s/' % (modelRunTitle))
-    cont.set('db', db.Database(modelRunTitle))
-    
-    RatioToNEIFig(cont)
     
