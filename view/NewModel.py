@@ -123,13 +123,10 @@ class NewModel(QtGui.QWidget):
         self.cbSGP = QtGui.QCheckBox('Pesticide', self)
         # switch grass fertilizers.
         self.lblF_sg = QtGui.QLabel('Switch Grass Fertilizer.', self)
-        self.lblF_sg_aa = QtGui.QLabel('annhydrous_amonia', self)
         self.lblF_sg_an = QtGui.QLabel('ammonium_nitrate', self)
         self.lblF_sg_as = QtGui.QLabel('ammonium_sulfate', self)
         self.lblF_sg_ur = QtGui.QLabel('urea', self)
         self.lblF_sg_ns = QtGui.QLabel('nsol', self)
-        self.leF_sg_aa = QtGui.QLineEdit()
-        #self.leF_sg_aa.setText('0.0')
         self.leF_sg_an = QtGui.QLineEdit()
         self.leF_sg_as = QtGui.QLineEdit()
         self.leF_sg_ur = QtGui.QLineEdit()

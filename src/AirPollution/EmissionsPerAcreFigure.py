@@ -55,7 +55,8 @@ class EmissionsPerAcreFigure():
                 
             plt.setp(bp['boxes'], color='black')
             plt.setp(bp['whiskers'], color='black', linestyle='-')
-            plt.yscale('log')
+            # remove to get rid of log scale.
+            #plt.yscale('log')
     
             plotTitle=pollutantLabels[pNum]
             axisTitle = '%s emissions  (g/acre)' % (pollutantLabels[pNum])
@@ -116,7 +117,10 @@ class EmissionsPerAcreFigure():
                       alpha=0.7)
                       
         #determine limits of axis
-        self.ax1.set_ylim(bottom=1e-07, top=1e-1)                  
+        # to view all, let it be logarithim scale: self.ax1.set_ylim(bottom=1e-07, top=1e-01)
+        # to view sg, cs, and ws spread: self.ax1.set_ylim(bottom=1e-07, top=0.0002
+        # to view cg spread: self.ax1.set_ylim(bottom=0.0002, top=.003)                  
+        self.ax1.set_ylim(bottom=1e-07, top=1e-01)
         
         # Hide these grid behind plot objects
         self.ax1.set_axisbelow(True)

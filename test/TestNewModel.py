@@ -137,7 +137,7 @@ class TestNewModel(unittest.TestCase):
         self.assertEqual(m.getAllAtributes('leF_sg_an')[0][1], m.leF_sg_an)
         self.assertEqual(m.getAllAtributes('leF_cg_aa')[0][1], m.leF_cg_aa)
         self.assertEqual(m.getAllAtributes('leF_ws_ur')[0][1], m.leF_ws_ur)
-        self.assertEqual(len(m.getAllAtributes('lblF_sg')), 6)
+        self.assertEqual(len(m.getAllAtributes('lblF_sg')), 5)
 
     '''
     test getFerts() Make sure it contains the correct feed stocks. and 
@@ -149,7 +149,6 @@ class TestNewModel(unittest.TestCase):
         self.assertEqual(len(fertsDist), 4)
         for feed, fert in fertsDist.items():
             self.assertEqual(feed in feedstock, True)
-            self.assertEqual(len(fert), 5)
     
     '''
     Test closing all of the fertlizer line edits and labels.

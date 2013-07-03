@@ -6,16 +6,21 @@ class Inputs:
     # variables that can be accesed.
     title, run_codes, ferts, pestFeed, fertDist = None, None, None, None, None
     
-    def __init__(self, inputs):
-        self.sortInputs(inputs)
+    '''
+    @param inputs: Input parameters to model. dict(string: vars)
+    '''
+    def __init__(self, inputs=False):
+        if inputs: self.sortInputs(inputs)
         
     '''
     Go through a dictionary of values that map a category to input parameters 
     to the air model.
-    @param inputs: Input parameters to model. 
+    @param inputs: Input parameters to model. dict(string: vars)
     title => run title.
     checkBoxes => run codes, and fertilizers.
     fertilizers => fertilizers distribution.
+    operations => operations on feedstocks: harvest, non-harvest, transport.
+    alloc => allocating non-harvest distribution from corn grain to corn stover and wheat straw.
     @return: run codes, title, fertilizers, fertilizer distribution.
     '''
     def sortInputs(self, inputs):
@@ -42,6 +47,7 @@ class Inputs:
         alloc = {}
         # if value was entered.
         if value:
+            value = float(value)
             diff = 1 - value
             alloc['CG'] = value
             alloc['CS'] = diff
@@ -219,8 +225,10 @@ class Inputs:
                 elif name.endswith('as') and var.text(): fertDist[feed][2] = str(var.text())
                 elif name.endswith('ur') and var.text(): fertDist[feed][3] = str(var.text())
                 elif name.endswith('ns') and var.text(): fertDist[feed][4] = str(var.text())
+            # sg does not have a 'aa' fertilizer input. But it is always 0.
+            if feed == 'SG': fertDist[feed][0] = str(0)
             # check if nothing was entered.
-            if all(v == None for v in fertDist[feed]):
+            if all(v == None or '0' for v in fertDist[feed]):
                 fertDist[feed] = None
         return fertDist
             

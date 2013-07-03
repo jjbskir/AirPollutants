@@ -86,8 +86,8 @@ class CombustionEmissions(SaveDataHelper.SaveDataHelper):
                         HP = row[3]   
                         description, operation = self._getDescription(run_code, SCC, HP) 
                         # check if it is a feedstock and operation that should be recorded.
-                        if feedstock == 'SG' or feedstock == 'FR' or self.operationDict[feedstock][operation[0]]:           
-                        
+                        if feedstock == 'FR' or self.operationDict[feedstock][operation[0]]:           
+
                             THC = float(row[5]) * convert_tonne
                             CO = float(row[6]) * convert_tonne
                             NOx = float(row[7]) * convert_tonne
@@ -97,7 +97,7 @@ class CombustionEmissions(SaveDataHelper.SaveDataHelper):
                             PM25 = float(row[10]) * 0.97 * convert_tonne
                             FuelCons = float(row[19])  # gal/year
                             
-                            
+                            # should this be converted to tonne again?
                             VOC = THC * self.vocConversion * convert_tonne                    
                             NH3 = FuelCons * self.LHV * self.NH3_EF / (1e6)  # gal/year * mmBTU/gal * gNH3/mmBTU * Mg/g
                             
@@ -105,10 +105,10 @@ class CombustionEmissions(SaveDataHelper.SaveDataHelper):
                             # allocate non harvest emmisions from cg to cs and ws.
                             if operation and operation[0] == 'N' and feedstock == 'CG': 
                                 # add to cs.
-                                if self.operationDict['CS'][operation[0]]:
+                                if self.operationDict['CS'][operation[0]] and self.alloc['CS'] != 0:
                                     self._record('CS', row[0], SCC, HP, FuelCons, THC, VOC, CO, NOx, CO2, SO2, PM10, PM25, NH3, description, run_code, writer, queries, self.alloc)
                                 # add to ws. 
-                                elif self.operationDict['WS'][operation[0]]:  
+                                if self.operationDict['WS'][operation[0]] and self.alloc['WS'] != 0:  
                                     self._record('WS', row[0], SCC, HP, FuelCons, THC, VOC, CO, NOx, CO2, SO2, PM10, PM25, NH3, description, run_code, writer, queries, self.alloc)
                                 # add to corn grain.
                                 self._record(feedstock, row[0], SCC, HP, FuelCons, THC, VOC, CO, NOx, CO2, SO2, PM10, PM25, NH3, description, run_code, writer, queries, self.alloc)
@@ -136,7 +136,7 @@ class CombustionEmissions(SaveDataHelper.SaveDataHelper):
         # multiply the emmissions by allocation constant.
         if alloc:
             FuelCons, THC, VOC, CO, NOx, CO2, SO2, PM10, PM25, NH3 = FuelCons * alloc[feed], THC * alloc[feed], VOC * alloc[feed], CO * alloc[feed], NOx * alloc[feed], CO2 * alloc[feed], SO2 * alloc[feed], PM10 * alloc[feed], PM25 * alloc[feed], NH3 * alloc[feed]
-        #writer.writerow((row, SCC, HP, FuelCons, THC, VOC, CO, NOx, CO2, SO2, PM10, PM25, NH3, run_code,))
+        writer.writerow((row, SCC, HP, FuelCons, THC, VOC, CO, NOx, CO2, SO2, PM10, PM25, NH3, run_code,))
                             
         q = """INSERT INTO %s.%s_raw (FIPS, SCC, HP, THC, VOC, CO, NOX, CO2, SOx, PM10, PM25, fuel_consumption, NH3, description, run_code) 
                                             VALUES ('%s', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, '%s', '%s')""" % (self.db.schema, feed, row, SCC, HP, THC, VOC, CO, NOx, CO2, SO2, PM10, PM25, FuelCons, NH3, description, run_code)
@@ -155,18 +155,21 @@ class CombustionEmissions(SaveDataHelper.SaveDataHelper):
                 description = "Year %s - Harvest" % (run_code[4])  # year 1-9
             else:
                 description = "Year %s - Harvest" % (run_code[4:6])  # year 10
+            operation = 'Harvest'
 
         elif run_code.startswith('SG_N'):
             if len(run_code) == 4: 
                 description = "Year %s - Non-Harvest" % (run_code[4])  # year 1-9
             else:
                 description = "Year %s - Non-Harvest" % (run_code[4:6])  # year 10
+            operation = 'Non-Harvest'
                 
         elif run_code.startswith('SG_T'):
             if len(run_code) == 4: 
                 description = "Year %s - Transport" % (run_code[4])  # year 1-9
             else:
                 description = "Year %s - Transport" % (run_code[4:6])  # year 10
+            operation = 'Transport'
                         
 # Forest Residue            
         elif run_code.startswith('FR'):

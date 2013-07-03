@@ -50,7 +50,7 @@ nh3    float);"""
         
     '''
     Create summed dimmensions table in the db.
-    @attention: fr should have a harv_ac.
+    TODO: fr should have a harv_ac.
 
     select ca.fips, ca.st, dat.fed_minus_55 
     from constantsSchema.county_attributes ca, fr_data dat where dat.fips = ca.fips"""
@@ -114,7 +114,11 @@ nh3    float);"""
     ---------------------------------------------------------------------------------------------
     """ % (feedstock)
     
-    
+        '''
+        TODO: VOC, seeing what happens if we do not include raw.voc
+        (raw.voc + chem.voc) as voc,
+        Removed the spread in VOC per acre.
+        '''
         if feedstock == 'CG' or feedstock == 'SG': 
             query +="""
     (SELECT dat.fips, %s, %s,

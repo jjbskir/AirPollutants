@@ -8,12 +8,13 @@ from controller.Controller import Controller
 import sys
 from PyQt4 import QtGui, QtCore
 from src.AirPollution.Driver import Driver
+from development.SG_VOC import SG_VOC
 
 if __name__ == "__main__": 
     
     '''
     # scenario title.
-    title = 'cgYield'
+    title = 'sgNew'
     # run codes.
     run_codes = [
                      'SG_H1','SG_H2','SG_H3','SG_H4','SG_H5','SG_H6','SG_H7','SG_H8','SG_H9','SG_H10',
@@ -33,18 +34,20 @@ if __name__ == "__main__":
     db = Database(title)
     qprocess = None
     # aa, an, as, ur, ns
-#    fertDist = {'CG': None, 'CS': None, 'WS': None, 'SG': None}
-    fertDist = {'CG': ['.2', '.2', '.2', '.2', '.2'], 
-                'CS': ['.2', '.2', '.2', '.2', '.2'],
-                'WS': ['.2', '.2', '.2', '.2', '.2'],
-                'SG': ['0', '.4', '.2', '.2', '.2']}
+    fertDist = {'CG': None, 'CS': None, 'WS': None, 'SG': None}
+#    
+#    fertDist = {'CG': ['.2', '.2', '.2', '.2', '.2'], 
+#                'CS': ['.2', '.2', '.2', '.2', '.2'],
+#                'WS': ['.2', '.2', '.2', '.2', '.2'],
+#                'SG': ['0', '.4', '.2', '.2', '.2']}
     fertFeed = {'CSF': True, 'WSF': True, 'CGF': True, 'SGF': True}
     pestFeed = {'CGP': True, 'SGP': True}
     operationDict = {'CS': {'H': True, 'N': True, 'T': True}, 
                      'WS': {'H': True, 'N': True, 'T': True},
                      'CG': {'H': True, 'N': True, 'T': True},
                      'SG': {'H': True, 'N': True, 'T': True}}
-    alloc = {'CG': 1, 'CS': 0, 'WS': 0}
+    alloc = {'CG': 1, 'CS': 0, 'WS': 0}    
+    
     # run program
     d = Driver(title, run_codes, db)
     #d.setupNONROAD()
@@ -61,8 +64,5 @@ if __name__ == "__main__":
     sys.exit(app.exec_()) 
     
     
-    
-    
-
 
     

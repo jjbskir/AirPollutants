@@ -27,7 +27,7 @@ class Population(object):
 
 #Used in all agricultural feedstocks (i.e. not FR)
         self.activity_tractor = 475.0              # hr / year (NonRoad default value)
-           
+         
 #Corn Grain
         self.activity_combine = 150                # hr / year (NonRoad default values)
         self.activity_gas = 716.0                  # hr / year (NonRoad default values)
@@ -98,7 +98,11 @@ FIPS       Year  SCC        Equipment Description                    HPmn  HPmx 
 
 
 
-    
+    '''
+    Find machinery hours based on yield.
+    @param scenario_yield: Yield from feed stock. lbs/acre
+    @return: Combine hours per acre. hrs/acre 
+    '''
     def _getCombineHoursPerAcre(self, scenario_yield):
         # find machinery hours based on yield
         if scenario_yield <= 0.5:
@@ -131,7 +135,7 @@ FIPS       Year  SCC        Equipment Description                    HPmn  HPmx 
 
 '''
 Sub classes of population for each unique crop.
-@attention: Should try to standarize what is in the dat[] array with a variable for each index.
+TODO: Should try to standarize what is in the dat[] array with a variable for each index.
 ex) state = dat[1]
 '''
 
@@ -151,18 +155,19 @@ class ResiduePop(Population):
     Then writes them to a population file.  
     @param fips: fips county code. (string)
     @param dat: Data from the db containing harvested acres and the yield from the residues. list(string)    
+        harv_ac = dat[2]: Harvested acres. acrs
+        scenario_yield = dat[4]: Yield. lbs
     '''          
     def append_Pop(self, fips, dat):
-        harv_ac = dat[2]
-        #prod = dat[3]                    #Not used, but kept for consistency.
-        scenario_yield = dat[4]        
- 
-        hours_per_acre_combine = self._getCombineHoursPerAcre(scenario_yield)
-
-        #calculate population of combine for harvest.
-        pop_comb = round(hours_per_acre_combine * harv_ac / (self.activity_combine), 10)
+        harv_ac = dat[2] # acre
+        scenario_yield = dat[4] # lbs        
+        hours_per_acre_combine = self._getCombineHoursPerAcre(scenario_yield) # hrs/acre
+        # calculate population of combine for harvest.
+        # pop = (hr/acre * acre) / (hr/yr) = yr
+        pop_comb = round(hours_per_acre_combine * harv_ac / (self.activity_combine), 10) # yr
         # calculate population of tractors for transport.
-        pop_bale_mover = round((scenario_yield / self.transportBales) * harv_ac / (self.activity_tractor),10)
+        # pop = [(lbs/acre / dt/hr) * acre] / hr/yr = yr 
+        pop_bale_mover = round((scenario_yield / self.transportBales) * harv_ac / (self.activity_tractor),10) # yr
 
         lines = """%s       %s 2270005020 Dsl - Combines                             300   600 345.8  7000  DEFAULT         %s
 %s       %s 2270005015 Dsl - Agricultural Tractors                100   175 133.6  4667  DEFAULT         %s
@@ -170,11 +175,6 @@ class ResiduePop(Population):
 
         self.pop_file.writelines(lines)
                 
-   
-   
-   
-   
-   
    
    
    
@@ -202,14 +202,16 @@ class ForestPop(Population):
     '''
     Calculate populations for each fips code.
     @param fips: Fips county code. string
-    @param dat: Db data for harveste acres. list(string) 
-    or is it the produce?
+    @param dat: Db data for produce. list(string) 
+        produce = dat[2]: produce from FR. dt
     '''
     def append_Pop(self, fips, dat):
-        
-        chipper_pop = round(self.hrs_per_dt_chipper * float(dat[2]) / (self.activity_chipper), 10)
-
-        loader_pop = round(self.hrs_per_dt_loader * float(dat[2]) / (self.activity_loader), 10)
+        # dt
+        prod = dat[2]
+        # pop = (dt/hr * dt) / (hr/yr) = yr
+        chipper_pop = round(self.hrs_per_dt_chipper * float(prod) / (self.activity_chipper), 10)
+        # pop = (dt/hr * dt) / (hr/yr) = yr
+        loader_pop = round(self.hrs_per_dt_loader * float(prod) / (self.activity_loader), 10)
                 
         lines = """%s       %s 2270007015 Dsl - Forest Eqp - Feller/Bunch/Skidder    100   175   137  4667  DEFAULT         %s
 %s       %s 2270007015 Dsl - Forest Eqp - Feller/Bunch/Skidder    300   600 421.3  7000  DEFAULT         %s
@@ -217,11 +219,6 @@ class ForestPop(Population):
 
         self.pop_file.writelines(lines)
    
-   
-
-
-
-
 
 
 
@@ -246,14 +243,20 @@ class CornGrainPop(Population):
         self.hrs_per_acre_noTill = 0.5884           #hrs/acre no till
         
                 
-
+    '''
+    Calculates a vehicle population for corn grain and adds population to .pop file.
+    @param fips: Fips code.
+    @param dat: Data from Billion ton study in the db on corn grain.
+        harv_ac = dat[2]: Harvested acres. acres
+        prod = dat[3]: Produce. lbs
+    ############################
+    @deprecated: this is not a 10 year cycle!
+    harv_ac = dat[2] * 0.1    #10% of acres in each year of the 10-yr production cycle
+    prod = dat[3] / 10.0 
+    ############################
+    '''
     def append_Pop(self, fips, dat):
-        #TODO: CASE WHEN POP = 0.0
-        '''
-        @deprecated: this is not a 10 year cycle!
-        harv_ac = dat[2] * 0.1    #10% of acres in each year of the 10-yr production cycle
-        prod = dat[3] / 10.0 
-        '''
+        #TODO: CASE WHEN POP = 0.0, NOAH
         harv_ac = dat[2]     
         prod = dat[3]                  
         # non harvest model.
@@ -265,29 +268,28 @@ class CornGrainPop(Population):
             self.__setHarvPopFile__(fips, harv_ac, prod)
             pass
 
-
     '''
-    Calculates tractor and combine populations for transport and harvest.
-    @attention: why is prod not being used?
-    shouldn't scenario_yield = prod / harv_ac?
+    Calculates tractor and combine populations for transport and harvest.  
+    ############################################
+    @deprecated: Changed scenario yield = harv_ac * constant, 
+    to (prod / harv_ac) * constant. 
+    Also has to make sure not dividing by 0.
+    ############################################
     '''
     def __setHarvPopFile__(self, fips, harv_ac, prod):
         ##convert from bu/acre to dt/acre
-        '''
-        @deprecated: Changed scenario yield = harv_ac * constant, 
-        to (prod / harv_ac) * constant. 
-        Also has to make sure not dividing by 0.
-        '''
+        # lbs/acre
         scenario_yield = 0
         if harv_ac > 0:
             scenario_yield = (prod / harv_ac) * (56.0) * (1.0-0.155) / 2000.0
-
+        # hrs/acre
         hours_per_acre_combine = self._getCombineHoursPerAcre(scenario_yield)
 
         #calculate population
         #EDIT 12.07.12 - REDUCED COMBINE HRS/ACRE BY 10% DUE TO TRANSPORT CART
+        # (hrs/acre * acre) / (hrs/yr) = yr
         pop_combine = round((hours_per_acre_combine * 0.9) * harv_ac / (self.activity_combine), 10)
-        # [(acre) / (bu/hr)] * (acre) / (hr/year)
+        # [(lbs/acre) / (bu/hr)] * (acre) / (hr/yr) = yr
         pop_transport = (scenario_yield / self.transport_tractor) * harv_ac / (self.activity_tractor)    
                        
         lines = """%s       %s 2270005015 Dsl - Agricultural Tractors                100   175 133.6  4667  DEFAULT        %s
@@ -302,18 +304,20 @@ class CornGrainPop(Population):
     '''
     def __setNonHarvPopFile__(self, fips, harv_ac, prod):
         if self.run_code.endswith('CN'):
-            #  pop = (hrs/acre) * (acre) / (hr/year) = year?
-            pop_conv_till = self.hrs_per_acre_convTill * harv_ac / (self.activity_tractor)
+            #  pop = (hrs/acre) * (acre) / (hrs/yr) = yr
+            pop_conv_till = self.hrs_per_acre_convTill * harv_ac / (self.activity_tractor) # yr
             lines = """%s       %s 2270005015 Dsl - Agricultural Tractors                175   300 236.5  4667  DEFAULT        %s
 """ % (fips, self.episodeYear, pop_conv_till)
             
         elif self.run_code.endswith('RN'):
-            pop_reduced_till = self.hrs_per_acre_redTill * harv_ac / (self.activity_tractor)
+            # pop = (hrs/acre * acre) / (hrs/yr) = yr
+            pop_reduced_till = self.hrs_per_acre_redTill * harv_ac / (self.activity_tractor) # yr
             lines = """%s       %s 2270005015 Dsl - Agricultural Tractors                100   175 133.6  4667  DEFAULT        %s
 """ % (fips, self.episodeYear, pop_reduced_till)        
         
         elif self.run_code.endswith('NN'):
-            pop_conventional_till = self.hrs_per_acre_noTill * harv_ac / (self.activity_tractor)
+            # pop = (hrs/acre * acre) / (hrs/yr) = yr
+            pop_conventional_till = self.hrs_per_acre_noTill * harv_ac / (self.activity_tractor) # yr
             lines = """%s       %s 2270005015 Dsl - Agricultural Tractors                100   175 133.6  4667  DEFAULT        %s
 """ % (fips, self.episodeYear, pop_conventional_till)
 
@@ -363,21 +367,23 @@ class CornGrainIrrigationPop(Population):
     '''
     Finishes the population file.
     For irrigation this is most of the class.
-    @param indicator: Indicator total from allocation class.
+    @param indicator: Indicator total from allocation class. acres
     '''
     def finishPop(self, indicator):
         if self.dat[0] < 9999: fips = '0'+str(self.dat[0])
         else: fips = str(self.dat[0])
-        
+        # state fips
         st_fips = fips[0:2]
+        # hp
         hp = self.dat[5]
+        # hrs/acre
         hpa = self.dat[7]
 
 
         #Gasoline Irrigation
         if self.run_code.endswith('G'):     
             hp_array = ['0']*7
-            
+            # pop = (acres * hrs/acre) / (hrs/yr) = yr
             pop = round(indicator * hpa / self.activity_gas,10)            
                 
             if hp < 6: hp_array[0] = pop
@@ -407,7 +413,7 @@ class CornGrainIrrigationPop(Population):
 
         #LPG Irrigation, only one hp range is modeled in Nonroad
         if self.run_code.endswith('L'):
-            
+            # pop = (acres * hrs/acre) / (hrs/yr) = yr
             pop = round(indicator * hpa / self.activity_lpg,10)
             lines = """%s000       %s 2267005060 LPG - Irrigation Sets                      100   175   113  3000  DEFAULT        %s
 """ % (st_fips, self.episodeYear, pop)
@@ -416,7 +422,7 @@ class CornGrainIrrigationPop(Population):
         #CNG Irrigation
         if self.run_code.endswith('C'):
             hp_array = ['0']*6
-            
+            # pop = (acres * hrs/acre) / (hrs/yr) = yr
             pop = round(indicator * hpa / self.activity_cng,10)            
                 
             if hp < 40: hp_array[0] = pop
@@ -444,7 +450,7 @@ class CornGrainIrrigationPop(Population):
         if self.run_code.endswith('D'):
 
             hp_array = ['0']*11
-            
+            # pop = (acres * hrs/acre) / (hrs/yr) = yr
             pop = round(indicator * hpa / self.activity_diesel,10)            
                 
             if hp < 11: hp_array[0] = pop
@@ -490,11 +496,6 @@ class CornGrainIrrigationPop(Population):
         self.pop_file.close()
         
         
-        
-
-
-
-
 
 """
 Calculates equipment populations for a perennial (10 year) switchgrass model run.
@@ -505,7 +506,7 @@ class SwitchgrassPop(Population):
         Population.__init__(self, cont, episodeYear, run_code)
         
         
-#Yield assumptions for switchgrass (fractions are compared to 'mature yields')       
+        #Yield assumptions for switchgrass (fractions are compared to 'mature yields')       
         if self.run_code.endswith('H1'): 
             self.yield_factor = 1/3.0
         elif self.run_code.endswith('H2'): 
@@ -514,7 +515,15 @@ class SwitchgrassPop(Population):
             self.yield_factor = 1.0        
 
 
-
+    '''
+    ##############################
+    @deprecated: 'SG_N' was SG_NH before,
+    meaning that part of the code never ran 
+    giving false results.
+    old code: if self.run_code.startswith('SG_NH'): 
+    new code: if self.run_code.startswith('SG_N'): 
+    ##############################
+    '''
     def append_Pop(self, fips, dat):
         #case where there is no production
         if dat[3] == 0.0:
@@ -523,13 +532,6 @@ class SwitchgrassPop(Population):
         else:
             harv_ac = dat[2] * 0.1    #10% of acres in each year of the 10-yr production cycle
             prod = dat[3] / 10.0      #Production at maturity    
-            '''
-            **********************************
-            @attention: 'SG_N' was SG_NH before,
-            meaning that part of the code never ran 
-            giving false results.
-            ***********************************
-            '''
             if self.run_code.startswith('SG_N'): 
                 self.__getNonHarvHrsPerAcre__(harv_ac)
             elif self.run_code.startswith('SG_H'):
@@ -549,23 +551,29 @@ class SwitchgrassPop(Population):
         self.pop_file.writelines(lines)
 
 
-
+    '''
+    ##############################
+    @deprecated: Should be N1, not NH1
+    old code: if self.run_code.endswith('NH1'):
+    new code: if self.run_code.endswith('N1'):                  
+    ##############################
+    '''
     def __getNonHarvHrsPerAcre__(self, harv_ac):
  
         #year 1, establishment year, non-harvest activities
-        if self.run_code.endswith('NH1'):
+        if self.run_code.endswith('N1'):
             self.hrs_per_ac_60hp = 0.2211
             self.hrs_per_ac_130hp = 0.5159
             
                         
         #year 2, maintenance year, non-harvest activities            
-        elif self.run_code.endswith('NH2'):
+        elif self.run_code.endswith('N2'):
             self.hrs_per_ac_60hp = 0.04620
-            self.hrs_per_ac_130hp = 0.05060
+            self.hrs_per_ac_130hp = 0.0
 
 
         #year 5, additional pesticide applications    
-        elif self.run_code.endswith('NH5'):
+        elif self.run_code.endswith('N5'):
             self.hrs_per_ac_60hp = 0.1914 #pesticides are applied in addition to other activities
             self.hrs_per_ac_130hp = 0.0
 
@@ -575,7 +583,7 @@ class SwitchgrassPop(Population):
             self.hrs_per_ac_60hp = 0.04620
             self.hrs_per_ac_130hp = 0.0
  
-            
+        # (acres * hrs/acre) / (hr/year) = year
         self.pop_60 = round((harv_ac * self.hrs_per_ac_60hp) / (self.activity_tractor),10)
         self.pop_130 = round((harv_ac * self.hrs_per_ac_130hp) / (self.activity_tractor),10)
 
@@ -584,7 +592,7 @@ class SwitchgrassPop(Population):
            
     def __getHarvHrsPerAcre__(self, harv_ac, prod):
 
-        scenario_yield = (prod/harv_ac) * self.yield_factor
+        scenario_yield = (prod/harv_ac) * self.yield_factor # lb/acre
                 
         if (scenario_yield) < 20.0: baler = 0.169*1.1 #hrs/acre  
         else: baler = (scenario_yield/20.0)*1.1 #hrs/acre
@@ -592,24 +600,37 @@ class SwitchgrassPop(Population):
         mower = 0.138*1.1 #hrs/acre
         rake = 0.191*1.1 #hrs/acre
         
+        # (hrs/acre * acres) / (hrs/yr) = yr 
         self.pop_60 = (rake * harv_ac) / self.activity_tractor
         self.pop_130 = ((mower + baler) * harv_ac) / self.activity_tractor
         
                 
-       
-        
+    '''
+    Get the transport populations in years.
+    #################################
+    @deprecated: pop_130 was calculated incorrectly. Units did not make sense.
+    old code: self.pop_130 = ((scenario_yield * self.transportBales) / self.activity_tractor) * 1.1
+    new code: self.pop_130 = ((scenario_yield) / (self.transportBales * self.activity_tractor) * 1.1
+    machine hours = (scenario_yield / self.transportBales) * 1.1
+    @deprecated: Changed population equation to use produce instead of yield. Allows population to be in units of yr.
+    old code: scenario_yield = (prod/harv_acre) * self.yield_factor  
+    new code: scenario_prod = prod * self.yield_factor  
+              self.pop_130 = (scenario_prod / (self.transportBales * self.activity_tractor)) * 1.1 # yr
+    ###################################
+    '''
+    #TODO: transport pop calculation
     def __getTransportHrsPerAcre__(self, harv_ac, prod):
         
-        #TODO: This methodology needs to be double checked still.      
         if self.run_code.endswith('T1'): self.yield_factor = 1/3.0
         
         elif self.run_code.endswith('T2'): self.yield_factor = 2/3.0
         
         else: self.yield_factor = 1.0
             
-        #years 1-10, transport activities  
-        scenario_yield = (prod/harv_ac) * self.yield_factor        
+        #years 1-10, transport activities   
+        scenario_prod = prod * self.yield_factor  # lbs      
         self.pop_60 = 0.0
-        self.pop_130 = ((scenario_yield * self.transportBales) / self.activity_tractor) * 1.1
+        # lbs / (dt/hr * hr/yr) = yr
+        self.pop_130 = (scenario_prod / (self.transportBales * self.activity_tractor)) * 1.1 # yr
 
 

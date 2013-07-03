@@ -7,10 +7,6 @@ class Allocate(object):
     The 'Allocate' class is used to write spatial indicators to .alo file for the NonRoad program to use. 
     File are written on a state-level basis. 
     """
-
-    '''
-    @attention: Should only grab important info from scenarioOptions.
-    '''
     def __init__(self, cont):
         self.path = cont.get('path') + 'ALLOCATE/' 
 

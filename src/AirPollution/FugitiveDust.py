@@ -16,7 +16,7 @@ class FugitiveDust(SaveDataHelper.SaveDataHelper):
     loop through run_codes and call this method to create fugitive
     dust emissions in database
     
-    @attention: why does it execute one query then returns another query?
+    TODO: why does it execute one query then returns another query?
     """                
     def setEmissions(self, run_code):
 # Forest Residue fugitive dust emissions            

@@ -115,3 +115,38 @@ if operation and operation[0] == 'N' and feedstock == 'CG':
     	self._record(feedstock, row[0], SCC, HP, FuelCons, THC, VOC, CO, NOx, CO2, SO2, PM10, PM25, NH3, description, run_code, writer, queries)
 /end/
 
+
+
+7/1/2013
+Population.SwitchGrass.__getNonHarvHrsPerAcre__() line 558
+Comment: SWitch grass population decides what vehicles are used given the year. In the code
+it looked for run code 'NH1', while this was changed to 'N1', so it was allways running
+as if the switch grass was years 3-4, and 6-10 for non-harvest.
+/old code/
+if self.run_code.endswith('NH1'):
+/end/
+/new code/
+if self.run_code.endswith('N1'):    
+/end/
+
+
+
+Population.SwitchGrass.__getTransportHrsPerAcre__() line 623
+comment: was calculating the machine hour population incorrectly.
+Could tell b/c the units were wrong.
+/old code/
+self.pop_130 = ((scenario_yield * self.transportBales) / self.activity_tractor) * 1.1
+/end/
+/new code/
+self.pop_130 = ((scenario_yield) / (self.transportBales * self.activity_tractor) * 1.1
+/end/
+
+
+
+Population.SwitchGrass.__getTransportHrsPerAcre__() line 630
+@deprecated: Changed population equation to use produce instead of yield. Allows population to be in units of yr.
+old code: scenario_yield = (prod/harv_acre) * self.yield_factor  
+new code: scenario_prod = prod * self.yield_factor  
+          self.pop_130 = (scenario_prod / (self.transportBales * self.activity_tractor)) * 1.1 # yr
+
+

@@ -59,7 +59,7 @@ class Driver:
     '''
     Set up the NONROAD program by creating option, allocation, and population files.
     Also creates batch files to run.
-    @attention: maybe should make episodeYear to be a global variable in this class instead of Options.
+    TODO: maybe should make episodeYear to be a global variable in this class instead of Options.
     '''    
     def setupNONROAD(self):
         #initialize objects
@@ -74,7 +74,7 @@ class Driver:
             print run_code
             #query database for appropriate production data based on run_code:
             # fips, state, productions 
-            # @attention: should this return the data?
+            # TODO: should this return the data? And pass the data as a variable in Driver?
             scenario.getData(run_code)
                
             #initialize variables

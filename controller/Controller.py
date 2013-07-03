@@ -126,13 +126,17 @@ class Controller(QtGui.QMainWindow):
         self.validate.ferts(inputs.ferts)
         self.validate.pest(inputs.pestFeed)
         
+        print 'Fertilizer distribution.'
         print inputs.fertDist
+        print 'Allocation from cg to ws and cs.'
         print inputs.alloc
-        print ''
+        print 'run codes.'
         print inputs.run_codes
+        print 'feed stocks using fertilizers.'
         print inputs.ferts
+        print 'feed stocks using pesticides.'
         print inputs.pestFeed
-        print ''
+        print 'Operations for feed stocks'
         print inputs.operations
         
         # make sure all of the variables to run the model have been created.

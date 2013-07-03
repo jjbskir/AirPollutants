@@ -12,9 +12,6 @@ class Chemical(SaveDataHelper.SaveDataHelper):
     '''
     @param pestFeed: Dictionary of the two feed stocks and weather they should
     run the pesticide code for them. dict(string) 
-    
-    @attention: Only need db parts from OptionsScenario.
-    will need schema variabls.
     '''
     def __init__(self, cont, pestFeed):
         SaveDataHelper.SaveDataHelper.__init__(self, cont)

@@ -12,10 +12,6 @@ class Fertilizer(SaveDataHelper.SaveDataHelper):
     # order of feed stocks in the fertilizer list.
     fcs, fws, fcg, fsg = 'CSF', 'WSF', 'CGF', 'SGF'
     
-    '''
-    @attention: should seperate db object so that the overhang of the class
-    that is not needed, will not be here. 
-    '''
     def __init__(self, cont, fertFeedStock, fertDist=False):
         SaveDataHelper.SaveDataHelper.__init__(self, cont)
         # gets used to save query to a text file for debugging purposes.
@@ -215,7 +211,7 @@ INSERT INTO """ + feed + """_nfert
         
     
     '''
-    @attention: is the GROUP BY correct? sg.fips is the only row that is being selected.
+    TODO: is the GROUP BY correct? sg.fips is the only row that is being selected.
     sg.prod, nfert.nox_nsol, nfert.nh3_nsol, N_app.SG are not. Should not affect query.
     '''
     def __switchgrass__(self, feed):
