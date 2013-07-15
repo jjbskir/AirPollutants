@@ -228,7 +228,7 @@ class Inputs:
             # sg does not have a 'aa' fertilizer input. But it is always 0.
             if feed == 'SG': fertDist[feed][0] = str(0)
             # check if nothing was entered.
-            if all(v == None or '0' for v in fertDist[feed]):
+            if all(v == None or v == '0' for v in fertDist[feed]):
                 fertDist[feed] = None
         return fertDist
             

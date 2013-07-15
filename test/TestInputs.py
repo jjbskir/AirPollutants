@@ -30,6 +30,9 @@ class TestInputs(unittest.TestCase):
         # check every check box.
         nm.selectAll.setCheckState(2)
         nm.showAll(nm.selectAll)
+        # add fertilizer distributions.
+        ferts = nm.getAllAtributes('leF_')
+        [fert[1].setText('.2') for fert in ferts]
         # create inputs
         inputs = nm.getInputs(nm.getBoxes(), nm.leTitle.text(), nm.getFerts(), nm.operations, nm.leAllocCG.text())
         return inputs
@@ -83,7 +86,7 @@ class TestInputs(unittest.TestCase):
     TODO: Create tests for private methods that are used in this method.
     '''
     def testCreateRunCodes(self):
-        # Inputs with values. Should be all of the run_codes, b/c every box was selected.
+        # inputs with values. Should be all of the run_codes, b/c every box was selected.
         inputs = self.createNewModel_returnInputs()
         i = Inputs()
         run_codes, ferts, pestFeed = i.createRunCodes(inputs['checkBoxes'])
@@ -105,20 +108,57 @@ class TestInputs(unittest.TestCase):
         self.assertEqual(pestFeed, {'CGP': False, 'SGP': False})
     
     '''
-    Test createFertilizerDistribution() -
+    Test createFertilizerDistribution() - Creates the fertilizer distribution for each feedstock. 
+    Allows unique numbers for 5 different fertilizer types. Except switch grass does not use anhydrate.
     key == 'fertilizers'
     '''
     def testCreateFertilizerDistribution(self):
-        pass
-    
+        # inputs with values. Each feedstock and fertilizer should have a value, except aa for switch grass.
+        inputs = self.createNewModel_returnInputs()
+        i = Inputs() 
+        fertDist = i.createFertilizerDistribution(inputs['fertilizers'])
+        self.assertEqual(fertDist, {'CG': ['.2', '.2', '.2', '.2', '.2'], 'CS': ['.2', '.2', '.2', '.2', '.2'],
+                                    'WS': ['.2', '.2', '.2', '.2', '.2'], 'SG': ['0', '.2', '.2', '.2', '.2']})
+        
+        
+        # empty inputs. Should return None for each feedstock, b/c no fertilizers where entered.
+        inputs = self.createNewModel_empty_returnInputs()
+        i = Inputs()
+        fertDist = i.createFertilizerDistribution(inputs['fertilizers'])
+        self.assertEqual(fertDist, {'CG': None, 'CS': None,
+                                    'WS': None, 'SG': None})
+             
     '''
-    Test createOperations() - 
+    Test createOperations() - For each feedstock determine which operations out of harvest, non-harvest, and transport
+    are used in the model.
     key == 'operations'
     '''
     def testCreateOperations(self):
-        pass
-    
+        # inputs with values. For each feedstock and operation should be True.
+        inputs = self.createNewModel_returnInputs()
+        i = Inputs() 
+        operationDict = i.createOperations(inputs['operations'])
+        self.assertEqual(operationDict, {'CS': {'H': True, 'N': True, 'T': True}, 
+                         'WS': {'H': True, 'N': True, 'T': True},
+                         'CG': {'H': True, 'N': True, 'T': True},
+                         'SG': {'H': True, 'N': True, 'T': True}})
         
+        # empty inputs. Should return False for each feedstock and operation.
+        inputs = self.createNewModel_empty_returnInputs()
+        i = Inputs()
+        operationDict = i.createOperations(inputs['operations'])
+        self.assertEqual(operationDict, {'CS': {'H': False, 'N': False, 'T': False}, 
+                         'WS': {'H': False, 'N': False, 'T': False},
+                         'CG': {'H': False, 'N': False, 'T': False},
+                         'SG': {'H': False, 'N': False, 'T': False}})
+
         
 if __name__ == "__main__":
     TestInputs.main()
+    
+    
+    
+    
+    
+    
+    

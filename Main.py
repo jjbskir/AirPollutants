@@ -12,7 +12,7 @@ from development.SG_VOC import SG_VOC
 
 if __name__ == "__main__": 
     
-    '''
+    
     # scenario title.
     title = 'sgNew'
     # run codes.
@@ -62,6 +62,8 @@ if __name__ == "__main__":
     myController = Controller(m)
     myController.show()
     sys.exit(app.exec_()) 
+    '''
+    
     
     
 

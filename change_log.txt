@@ -150,3 +150,48 @@ new code: scenario_prod = prod * self.yield_factor
           self.pop_130 = (scenario_prod / (self.transportBales * self.activity_tractor)) * 1.1 # yr
 
 
+
+7/8/2013
+Options.ScenarioOptions._getQuery() line191, 197
+@change: In the database there are rows that have produce = 0, while harvested acres and yield are non-zero.
+Need to skip over these faulty data points.
+new code: dat.prod  > 0.0
+
+
+
+
+7/11/2013
+SinglePassAllocation.__init__() line 60 and 82
+@change: Fugitive dust was being calculated wrong. Causing fug_pm25 to appear to be fug_pm10 and be too high.
+old code: fug_pm25 = fug_pm10 * """+self.residueAllocation+"""
+new code: fug_pm25 = fug_pm25 * """+self.residueAllocation+"""
+
+
+
+7/12/2013 
+Options.NROptionFile._NRoptions() line 287
+@change: NONROAD was not processing files with 10 in it so SG_H10, SG_N10, and SG_T10 inputs
+files were being made correct, but not processing and saving correctly with NONROAD. Hacked around
+this by saving SG_*10 in the same folder but using inputs from SG_*9
+old code: self.run_code
+new code: run_code = self.run_code 
+              if run_code.endswith('0'):
+                # remove the last character.
+                run_code = run_code[:-1]
+                # change the number from 1 to 9
+                split = list(run_code)
+                split[-1] = '9'
+                run_code = "".join(split)
+
+
+Options.NROptionFile._addOPT() line 452
+@change: Changes made to run NONROAD with SG_*9 and save it as SG_*10.  
+Leave folder for output to be the same. Change output file to be run_code given.
+old code: Population File    : """ + self.outPathPopAlo + 'POP\\' + self.state + '_' + self.run_code + """.pop
+          Harvested acres    : """ + self.outPathPopAlo + 'ALLOCATE\\' + self.state + '_' + self.run_code + """.alo
+new code: Population File    : """ + self.outPathPopAlo + 'POP\\' + self.state + '_' + new_run_code + """.pop
+          Harvested acres    : """ + self.outPathPopAlo + 'ALLOCATE\\' + self.state + '_' + new_run_code + """.alo
+
+
+
+

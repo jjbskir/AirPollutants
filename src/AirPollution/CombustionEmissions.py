@@ -26,6 +26,7 @@ class CombustionEmissions(SaveDataHelper.SaveDataHelper):
     def __init__(self, cont, operationDict, alloc): 
         SaveDataHelper.SaveDataHelper.__init__(self, cont)
         self.documentFile = "CombustionEmissions"
+        # not used here?
         self.pmRatio = 0.20
         self.basePath = cont.get('path')
         # operations and feedstock dictionary.
@@ -78,7 +79,7 @@ class CombustionEmissions(SaveDataHelper.SaveDataHelper):
                 for i in range(10): reader.next()
                         
                 for row in reader:
-                    
+                    # row[4] is the vehicle population.
                     if float(row[4]) > 0.0:    
                 
                         # _getDescription updates the vocConversion, NH3_EF and LHV for each fuel type    
@@ -127,6 +128,70 @@ class CombustionEmissions(SaveDataHelper.SaveDataHelper):
         print "Finished populating table for " + run_code            
 
     '''
+    Switch grass harvest and non-harvest uses two different machines that are 60 and 130 hp.
+    This creates multiple rows in the db for each operation year. To remove the duplicate columns,
+    for each fips and for each operation year, add all the same ones and make a single row.
+    '''
+    def updateSG(self):
+        # insert added data to sg_raw.
+        self._insertSGData()
+        # delete old data from sg_raw.
+        self._deleteSGData()
+    
+    '''
+    Switch grass harvest and non-harvest uses two different machines that are 60 and 130 hp.
+    This creates multiple rows in the db for each operation year. This function creates a single column for each run_code,
+    by adding together multiple entries from the different hp's. Adds data to sg_raw.
+    '''
+    def _insertSGData(self):
+        # when inserting, leave some of the slots blank that do not matter.
+        query = """
+            INSERT into """ + self.db.schema + """.sg_raw
+            WITH 
+                Raw as 
+                (
+                    SELECT DISTINCT fips, run_code, description,
+                        sum(nox) AS nox,
+                        sum(nh3) AS nh3,
+                        sum(sox) AS sox,
+                        sum(voc) AS voc,
+                        sum(pm10) AS pm10, 
+                        sum(pm25) AS pm25,
+                        sum(co) AS co  
+                    FROM sgnew.sg_raw
+                    GROUP BY fips, run_code, description
+                )
+                (
+                SELECT 
+                    dat.fips as fips, 
+                    '' as scc, 0 as hp, 0 as fuel_consumption, 0 as thc,
+                    (raw.voc) as voc,
+                    (raw.co) as co,
+                    (raw.nox) as nox, 
+                    0 as co2,
+                    (raw.sox) as sox,
+                    (raw.pm10) as pm10, 
+                    (raw.pm25) as pm25,
+                    (raw.nh3) as nh3,  
+                    raw.description as description,
+                    raw.run_code as run_code, 
+                    0 as fug_pm10, 0 as fug_pm25    
+                FROM """ + self.db.productionSchema + """.sg_data dat
+                LEFT JOIN Raw ON raw.fips = dat.fips
+                ) """
+        self.db.input(query)
+    
+    '''
+    Deletes unwanted data in sg_raw. b/c of multiple entries for each run_code.
+    '''    
+    def _deleteSGData(self):
+        query = """
+            DELETE FROM """ + self.db.schema + """.sg_raw
+            WHERE sg_raw.hp != 0 or sg_raw.run_code IS NULL  
+            """
+        self.db.input(query)
+
+    '''
     write data to static files and the database
     @param feed: Feed stock. string
     @param alloc: Allocation of non-harvest emmissions between cg, cs, and ws. dict(string: int)
@@ -148,6 +213,7 @@ class CombustionEmissions(SaveDataHelper.SaveDataHelper):
         HP = int(HP)
         # in case operation does not get defined.
         operation = ''
+        description = ''
         
 # Switchgrass        
         if run_code.startswith('SG_H'):

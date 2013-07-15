@@ -35,6 +35,13 @@ class SinglePassAllocation(SaveDataHelper.SaveDataHelper):
         residues = ['cs','ws']
         
         #define corn stover query - 380/540
+        '''
+        #########################
+        @change: Fugitive dust was being calculated wrong. Causing fug_pm25 to appear to be fug_pm10
+        old code: fug_pm25 = fug_pm10 * """+self.residueAllocation+"""
+        new code: fug_pm25 = fug_pm25 * """+self.residueAllocation+"""
+        #########################
+        '''
         for r in residues: 
             query = """
                 UPDATE """+r+"""_raw
@@ -50,7 +57,7 @@ class SinglePassAllocation(SaveDataHelper.SaveDataHelper):
                     pm25 = pm25 * """+self.residueAllocation+""",
                     nh3 = nh3 * """+self.residueAllocation+""",
                     fug_pm10 = fug_pm10 * """+self.residueAllocation+""",
-                    fug_pm25 = fug_pm10 * """+self.residueAllocation+"""
+                    fug_pm25 = fug_pm25 * """+self.residueAllocation+"""
                 WHERE description ilike '%Harvest%';
             """             
             self._executeQuery(query)
@@ -72,7 +79,7 @@ class SinglePassAllocation(SaveDataHelper.SaveDataHelper):
                     pm25 = pm25 * """+self.cornGrainAllocation+""",
                     nh3 = nh3 * """+self.cornGrainAllocation+""",
                     fug_pm10 = fug_pm10 * """+self.cornGrainAllocation+""",
-                    fug_pm25 = fug_pm10 * """+self.cornGrainAllocation+"""
+                    fug_pm25 = fug_pm25 * """+self.cornGrainAllocation+"""
                 WHERE 
                     description NOT ilike '%Conventional%' AND
                     description ilike '% Harvest%';

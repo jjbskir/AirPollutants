@@ -123,6 +123,7 @@ class Driver:
                     #initialize new pop and allocation files.                      
                     alo.initializeAloFile(state, run_code, scenario.episodeYear)
                     pop.initializePop(dat)
+                    # indicator is harvested acres. Except for FR when it is produce.
                     indicator = dat[2]
                     alo.writeIndicator(fips, indicator)
                     pop.append_Pop(fips, dat)            
@@ -202,12 +203,14 @@ class Driver:
         #Populate Combustion Emissions Tables
         print "Populating tables with combustion emissions..."
         Comb.populateTables(self.run_codes, self.modelRunTitle)
+#        Comb.updateSG()
         print "...COMPLETED populating tables with combustion emissions."
     #----------------------------------------------------------------
         
         
     #----------------------------------------------------------------
         #Fugitive Dust Emissions
+        
         modelSG = False
         for run_code in self.run_codes:
             if not run_code.startswith('SG'):
@@ -215,14 +218,15 @@ class Driver:
                 print "Fugitive Dust Emissions complete for " + run_code  
             else: 
                 modelSG = True
-                
+              
         if modelSG:
             #It makes more sense to create fugitive dust emissions using a separate method
             operations = ['Transport', 'Harvest', 'Non-Harvest']
             for operation in operations:
                 sgFugDust = FugitiveDust.SG_FugitiveDust(self.cont, operation)
                 sgFugDust.setEmissions()
-
+        
+        
     #only run the following if all feedstocks are being modeled.
         if len(feedstockList) == 5:
     #----------------------------------------------------------------
@@ -280,34 +284,6 @@ class Driver:
         print 'Successful completion of model run.'
 
 
-
-if __name__ == "__main__":    
-    
-    # scenario title.
-    title = 'folder'
-    # run codes.
-    run_codes = [
-                     #'SG_H1','SG_H2','SG_H3','SG_H4','SG_H5','SG_H6','SG_H7','SG_H8','SG_H9','SG_H10',
-                     #'SG_N1','SG_N2','SG_N3','SG_N4','SG_N5','SG_N6','SG_N7','SG_N8','SG_N9','SG_N10',
-                     #'SG_T1','SG_T2','SG_T3','SG_T4','SG_T5','SG_T6','SG_T7','SG_T8','SG_T9','SG_T10',
-                     #'FR',
-                     'CS_RT','CS_NT',
-                     #'WS_RT','WS_NT',
-                     #'CG_CH','CG_CN',
-                     #'CG_RH','CG_RN',
-                     #'CG_NH','CG_NN',
-                     #'CG_ID','CG_IL',
-                     #'CG_IC','CG_IG'
-                ] 
-    # create databse.
-    db = Database(title)
-    qprocess = None
-    # run program
-    d = Driver(title, run_codes, db)
-    d.setupNONROAD()
-    d.runNONROAD(qprocess)
-    #d.saveData()
-    
         
         
         

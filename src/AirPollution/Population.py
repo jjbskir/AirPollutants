@@ -516,13 +516,7 @@ class SwitchgrassPop(Population):
 
 
     '''
-    ##############################
-    @deprecated: 'SG_N' was SG_NH before,
-    meaning that part of the code never ran 
-    giving false results.
-    old code: if self.run_code.startswith('SG_NH'): 
-    new code: if self.run_code.startswith('SG_N'): 
-    ##############################
+    
     '''
     def append_Pop(self, fips, dat):
         #case where there is no production

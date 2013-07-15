@@ -78,7 +78,6 @@ nh3    float);"""
     INSERT INTO summedEmissions 
     WITH
     """
-    
         #populate tables that have fertilizer emissions
     #    if feedstock == 'CG' or feedstock == 'SG':
         if feedstock != 'FR':    
@@ -91,6 +90,7 @@ nh3    float);"""
     ---------------------------------------------------------------------------------------------
     """ % (feedstock)
     
+        # populate table that have pesticides.
         if feedstock == 'CG' or feedstock == 'SG':
             query += """
     Chem as (SELECT DISTINCT fips,
@@ -100,8 +100,18 @@ nh3    float);"""
     ---------------------------------------------------------------------------------------------
     """ % (feedstock)
     
+        # populate everything else.
+        '''
+        ########################
+        @change: Not adding fug_pm10
+        old code: (sum(pm10) + sum(fug_pm10)) AS pm10, 
+                  (sum(pm25) + sum(fug_pm25)) AS pm25,
+        new code: (sum(pm10) + 0.0) AS pm10, 
+                  (sum(pm25) + 0.0) AS pm25,
+        ########################
+        '''
         query +="""
-    Raw as (SELECT  DISTINCT fips,
+            Raw as (SELECT DISTINCT fips,
                     sum(nox) AS nox,
                     sum(nh3) AS nh3,
                     sum(sox) AS sox,
@@ -109,16 +119,12 @@ nh3    float);"""
                     (sum(pm10) + sum(fug_pm10)) AS pm10, 
                     (sum(pm25) + sum(fug_pm25)) AS pm25,
                     (sum(co)) AS co
-        FROM %s_raw
-        GROUP BY fips)
+            FROM %s_raw
+            GROUP BY fips)
     ---------------------------------------------------------------------------------------------
     """ % (feedstock)
     
-        '''
-        TODO: VOC, seeing what happens if we do not include raw.voc
-        (raw.voc + chem.voc) as voc,
-        Removed the spread in VOC per acre.
-        '''
+    
         if feedstock == 'CG' or feedstock == 'SG': 
             query +="""
     (SELECT dat.fips, %s, %s,

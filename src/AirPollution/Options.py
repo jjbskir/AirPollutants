@@ -172,21 +172,30 @@ class ScenarioOptions:
             elif run_code == 'CS_NT':
                 query = """select ca.fips, ca.st, dat.notill_harv_ac, dat.notill_prod, dat.notill_yield 
                 from cs_data dat, """ + self.db.constantsSchema + """.county_attributes ca where dat.fips = ca.fips order by ca.fips asc"""
-                
-          
-          
-                         
+                    
         elif run_code.startswith('WS'):
+            '''
+            ######################################################
+            @change: 
+            In the database there are rows that have produce = 0, while harvested acres and yield are non-zero.
+            Need to skip over these faulty data points.
+            new code: dat.prod  > 0.0
+            ######################################################
+            '''
             # what is this var used for?
             self.queryTable = 'ws_data'
-
+            
             if run_code == 'WS_RT':
-                query = """select ca.fips, ca.st, dat.reducedtill_harv_ac, dat.reducedtill_prod, dat.reducedtill_yield
-                from ws_data dat, """ + self.db.constantsSchema + """.county_attributes ca where dat.fips = ca.fips order by ca.fips asc"""
+                query = """ SELECT ca.fips, ca.st, dat.reducedtill_harv_ac, dat.reducedtill_prod, dat.reducedtill_yield
+                            FROM ws_data dat, """ + self.db.constantsSchema + """.county_attributes ca 
+                            WHERE dat.fips = ca.fips and dat.prod > 0.0
+                            ORDER by ca.fips asc"""
             
             elif run_code == 'WS_NT':
-                query = """select ca.fips, ca.st, dat.notill_harv_ac, dat.notill_prod, dat.notill_yield 
-                from ws_data dat, """ + self.db.constantsSchema + """.county_attributes ca where dat.fips = ca.fips order by ca.fips asc"""
+                query = """ SELECT ca.fips, ca.st, dat.notill_harv_ac, dat.notill_prod, dat.notill_yield 
+                            FROM ws_data dat, """ + self.db.constantsSchema + """.county_attributes ca 
+                            WHERE dat.fips = ca.fips and dat.prod > 0.0 
+                            ORDER by ca.fips asc"""
         
         
                 
@@ -219,8 +228,11 @@ class ScenarioOptions:
 '''
 functions associated with nonroad input files (*.opt files)
 Used to create the .opt file for the NONROAD model to run.
-@attention: might be easier to pass scenarioOptions into this class
-by just taking the needed variables and storing them in a array.
+
+@note: NONROAD was not processing files with 10 in it so SG_H10, SG_N10, and SG_T10 inputs
+files were being made correct, but not porcessed and saved correctly with NONROAD. Hacked around
+this by saving SG_*10 in the same folder but using inputs from SG_*9. This works b/c SG_*9 
+should be the same as SH_*10
 '''
 class NROptionFile:
 
@@ -249,14 +261,52 @@ class NROptionFile:
         # create .opt file
         self._NRoptions(fips)
 
-
-
     '''
     creates the .opt file.
     @param fips: Geographical Location
+    ###############################
+    @change: NONROAD was not processing files with 10 in it so SG_H10, SG_N10, and SG_T10 inputs
+    files were being made correct, but not processing and saving correctly with NONROAD. Hacked around
+    this by saving SG_*10 in the same folder but using inputs from SG_*9
+    old code: self.run_code
+    new code: run_code = self.run_code 
+              if run_code.endswith('0'):
+                # remove the last character.
+                run_code = run_code[:-1]
+                # change the number from 1 to 9
+                split = list(run_code)
+                split[-1] = '9'
+                run_code = "".join(split)
+    ###############################
     '''
     def _NRoptions(self, fips):
-        
+        run_code = self.run_code
+        # run_code SG_*10, not working correctly.
+        if run_code.endswith('0'):
+            # remove the last character.
+            run_code = run_code[:-1]
+            # change the number from 1 to 9
+            split = list(run_code)
+            split[-1] = '9'
+            run_code = "".join(split)
+            
+        self._addOPT(fips, run_code)
+    
+    '''
+    Add lines to .opt file.
+    @param fips: County.
+    @param new_run_code: To account for SG_*10 not working.
+    #####################################################
+    @change: Changes made to run NONROAD with SG_*9 and save it as SG_*10.  
+    Leave folder for output to be the same. Change output file to be run_code given.
+    old code: Population File    : """ + self.outPathPopAlo + 'POP\\' + self.state + '_' + self.run_code + """.pop
+              Harvested acres    : """ + self.outPathPopAlo + 'ALLOCATE\\' + self.state + '_' + self.run_code + """.alo
+    new code: Population File    : """ + self.outPathPopAlo + 'POP\\' + self.state + '_' + new_run_code + """.pop
+              Harvested acres    : """ + self.outPathPopAlo + 'ALLOCATE\\' + self.state + '_' + new_run_code + """.alo
+    #####################################################
+    '''
+    def _addOPT(self, fips, new_run_code): 
+           
         with open(self.path + self.state + ".opt", 'w') as self.opt_file:
         
             lines = """
@@ -397,7 +447,7 @@ This is the packet that defines the equipment population
 files read by the model.
 ------------------------------------------------------
 /POP FILES/
-Population File    : """ + self.outPathPopAlo + 'POP\\' + self.state + '_' + self.run_code + """.pop
+Population File    : """ + self.outPathPopAlo + 'POP\\' + self.state + '_' + new_run_code + """.pop
 /END/
 
 ------------------------------------------------------
@@ -410,7 +460,7 @@ National defaults  : data\\growth\\nation.grw
 
 
 /ALLOC FILES/
-Harvested acres    : """ + self.outPathPopAlo + 'ALLOCATE\\' + self.state + '_' + self.run_code + """.alo
+Harvested acres    : """ + self.outPathPopAlo + 'ALLOCATE\\' + self.state + '_' + new_run_code + """.alo
 /END/
 ------------------------------------------------------
 This is the packet that defines the emssions factors

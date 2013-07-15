@@ -56,7 +56,7 @@ class EmissionsPerAcreFigure():
             plt.setp(bp['boxes'], color='black')
             plt.setp(bp['whiskers'], color='black', linestyle='-')
             # remove to get rid of log scale.
-            #plt.yscale('log')
+            plt.yscale('log')
     
             plotTitle=pollutantLabels[pNum]
             axisTitle = '%s emissions  (g/acre)' % (pollutantLabels[pNum])
@@ -77,8 +77,7 @@ class EmissionsPerAcreFigure():
             '''
             emmissions per acre = (pollutant lbs) / (total acres)
             emmissions = pollutant / harv_ac
-            SELECT (%s) / (harv_ac) FROM %s.%s WHERE harv_ac > 0.0 AND feedstock ilike '%s';
-            % (pollutant,  self.db.schema, queryTable, feedstock)
+            TODO: Should harv_ac > 0.0 be here? Should this be in the Options class to eliminate the problem in the first place.
             '''
             query = """
                     SELECT (%s) / (harv_ac) FROM %s.%s WHERE harv_ac > 0.0 AND feedstock ilike '%s';
@@ -119,9 +118,10 @@ class EmissionsPerAcreFigure():
         #determine limits of axis
         # to view all, let it be logarithim scale: self.ax1.set_ylim(bottom=1e-07, top=1e-01)
         # to view sg, cs, and ws spread: self.ax1.set_ylim(bottom=1e-07, top=0.0002
-        # to view cg spread: self.ax1.set_ylim(bottom=0.0002, top=.003)                  
+        # to view cg spread: self.ax1.set_ylim(bottom=0.0002, top=.003)     
+        # to view pm spread: self.ax1.set_ylim(bottom=1e-04, top=0.002)                  
         self.ax1.set_ylim(bottom=1e-07, top=1e-01)
-        
+                
         # Hide these grid behind plot objects
         self.ax1.set_axisbelow(True)
     
