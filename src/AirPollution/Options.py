@@ -92,6 +92,13 @@ class ScenarioOptions:
     @param run_code: current run code to know what data to query from the db. 
     @return: query to be executed.
     @attention: propbably do not need to be querying the state from county_attributes, maybe remove later.
+    
+    @change: Changed where the irrigation data is queried from. 
+    Before from cg_irrigated_states.
+    current from cg_irrigated_new. Updated data was added to this schema
+    
+    @change: Changed the query so that it can be used for the updated data.
+    Also it is more elegant and readable than the piece of shit code that Noah wrote.
     '''            
     def _getQuery(self, run_code):
         query = None
@@ -116,11 +123,7 @@ class ScenarioOptions:
             
             # grab data for irrigation.  
             elif run_code.startswith('CG_I'):
-                
-                if run_code.endswith('D'): fuel_type = 'A'
-                elif run_code.endswith('G'): fuel_type = 'B'
-                elif run_code.endswith('L'): fuel_type = 'C'
-                elif run_code.endswith('C'): fuel_type = 'D'
+
                 # %s is a place holder for variables listed at the end of the sql query in the ().
                 # subprocess (WITH statment) is querried in the constant cg_irrigated_states. gets data for different
                 # vehicles and their attributes (fuel, horse power.)
@@ -130,6 +133,12 @@ class ScenarioOptions:
                 # Came to this conclusiong b/c in the CG part.
                 ###########   
                 '''
+
+                if run_code.endswith('D'): fuel_type = 'A'
+                elif run_code.endswith('G'): fuel_type = 'B'
+                elif run_code.endswith('L'): fuel_type = 'C'
+                elif run_code.endswith('C'): fuel_type = 'D'
+                
                 query = """
                 Set search_path to %s; 
                 WITH
@@ -159,7 +168,31 @@ class ScenarioOptions:
                             where ca.st ilike irr.state
                             order by ca.fips asc
                     """ % (self.db.constantsSchema, fuel_type, fuel_type, fuel_type, fuel_type, self.db.productionSchema)
-    
+                    
+                    
+                '''             
+                if run_code.endswith('D'): fuel_type = 'diesel'
+                elif run_code.endswith('G'): fuel_type = 'gasoline'
+                elif run_code.endswith('L'): fuel_type = 'lpg'
+                elif run_code.endswith('C'): fuel_type = 'natgas'
+                
+                query = """
+                WITH IRR AS (
+                    SELECT 
+                        state, fuel, hp, percent as perc, hrsperacre as hpa
+                    FROM constantvals.cg_irrigated_new
+                    WHERE cg_irrigated_new.fuel ilike '""" + fuel_type + """'
+                )
+                SELECT 
+                    ca.fips, ca.st, dat.total_harv_ac * irr.perc as acres, dat.total_prod, irr.fuel, irr.hp, irr.perc, irr.hpa    
+                FROM constantvals.county_attributes ca
+                left join bts2dat_55.cg_data dat on ca.fips = dat.fips
+                left join irr on irr.state ilike ca.st
+                                
+                WHERE ca.st ilike irr.state
+                order by ca.fips asc
+                """
+                '''
     
                
                   

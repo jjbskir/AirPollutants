@@ -55,6 +55,10 @@ class TestInputs(unittest.TestCase):
         inputs = self.createNewModel_returnInputs()
         i = Inputs(inputs)
         self.assertEqual(i.title, 'title')
+        
+        inputs = self.createNewModel_empty_returnInputs()
+        i = Inputs(inputs)
+        self.assertEqual(i.title, '')
     
     '''
     Test createAllocation() - Allocates non-harvest emissions from corn grain to corn stover and wheat straw.
@@ -151,6 +155,50 @@ class TestInputs(unittest.TestCase):
                          'WS': {'H': False, 'N': False, 'T': False},
                          'CG': {'H': False, 'N': False, 'T': False},
                          'SG': {'H': False, 'N': False, 'T': False}})
+    
+    '''
+    Test __init__(). An overall test to make sure all needed variables get created.
+    '''
+    def test__init__(self):
+        # inputs with values. For each feedstock and operation should be True.
+        inputs = self.createNewModel_returnInputs()
+        i = Inputs(inputs)
+        self.assertEqual(i.title, 'title')
+        self.assertEqual(i.alloc['CG'], 0.25)
+        self.assertEqual(i.alloc['CS'], 0.75)
+        self.assertEqual(i.alloc['WS'], 0.75)
+        allRunCodes = ['FR', 'CG_CH', 'CG_CN', 'CG_IC', 'CG_ID', 'CG_IG', 'CG_IL', 'CG_NH', 'CG_NN', 'CG_RH', 'CG_RN', 'CS_NT', 'CS_RT', 
+                       'SG_H1', 'SG_H2', 'SG_H3', 'SG_H4', 'SG_H5', 'SG_H6', 'SG_H7', 'SG_H8', 'SG_H9', 'SG_H10', 
+                       'SG_N1', 'SG_N2', 'SG_N3', 'SG_N4', 'SG_N5', 'SG_N6', 'SG_N7', 'SG_N8', 'SG_N9', 'SG_N10', 
+                       'SG_T1', 'SG_T2', 'SG_T3', 'SG_T4', 'SG_T5', 'SG_T6', 'SG_T7', 'SG_T8', 'SG_T9', 'SG_T10', 
+                       'WS_NT', 'WS_RT']
+        self.assertEqual(i.run_codes, allRunCodes)
+        self.assertEqual(i.ferts, {'CGF': True, 'CSF': True, 'SGF': True, 'WSF': True})
+        self.assertEqual(i.pestFeed, {'CGP': True, 'SGP': True})
+        self.assertEqual(i.fertDist, {'CG': ['.2', '.2', '.2', '.2', '.2'], 'CS': ['.2', '.2', '.2', '.2', '.2'],
+                                    'WS': ['.2', '.2', '.2', '.2', '.2'], 'SG': ['0', '.2', '.2', '.2', '.2']})
+        self.assertEqual(i.operations, {'CS': {'H': True, 'N': True, 'T': True}, 
+                         'WS': {'H': True, 'N': True, 'T': True},
+                         'CG': {'H': True, 'N': True, 'T': True},
+                         'SG': {'H': True, 'N': True, 'T': True}})
+        
+        # empty inputs. Should return False for each feedstock and operation.
+        inputs = self.createNewModel_empty_returnInputs()
+        i = Inputs(inputs)
+        self.assertEqual(i.title, '')
+        self.assertEqual(i.alloc['CG'], 1)
+        self.assertEqual(i.alloc['CS'], 0)
+        self.assertEqual(i.alloc['WS'], 0)
+        self.assertEqual(i.run_codes, [])
+        self.assertEqual(i.ferts, {'CGF': False, 'CSF': False, 'SGF': False, 'WSF': False})
+        self.assertEqual(i.pestFeed, {'CGP': False, 'SGP': False})
+        self.assertEqual(i.fertDist, {'CG': None, 'CS': None,
+                                    'WS': None, 'SG': None})
+        self.assertEqual(i.operations, {'CS': {'H': False, 'N': False, 'T': False}, 
+                         'WS': {'H': False, 'N': False, 'T': False},
+                         'CG': {'H': False, 'N': False, 'T': False},
+                         'SG': {'H': False, 'N': False, 'T': False}})
+        
 
         
 if __name__ == "__main__":

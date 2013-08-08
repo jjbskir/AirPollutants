@@ -68,7 +68,8 @@ class Fertilizer(SaveDataHelper.SaveDataHelper):
                     fertDist = self.db.output(query, self.db.constantsSchema)
                     # convert db data to usable strings.
                     fertDist = [str(f) for f in fertDist[0]]
-                else: fertDist = ['0', '0', '0', '1', '0']
+                # switch grass only uses nitrogen solution nsol.
+                else: fertDist = ['0', '0', '0', '0', '1']
                 fertFinal[feed] = fertDist
         return fertFinal
                 
@@ -257,7 +258,7 @@ INSERT INTO """ + feed + """_nfert
 
         (2801700003) AS SCC,
 
-        'Nitrogen Solutions Fertilizer Emissions' AS "Description"
+        'Urea Fertilizer Emissions' AS "Description"
 
         FROM  """ + self.db.productionSchema + """.sg_data sg, """ + self.db.constantsSchema + """.N_fert_EF nfert, """ + self.db.constantsSchema + """.CS_WS_SG_Napp N_app
 
@@ -278,7 +279,7 @@ INSERT INTO """ + feed + """_nfert
 
         (2801700003) AS SCC,
 
-        'Nitrogen Solutions Fertilizer Emissions' AS "Description"
+        'Ammonium Nitrate Fertilizer Emissions' AS "Description"
 
         FROM  """ + self.db.productionSchema + """.sg_data sg, """ + self.db.constantsSchema + """.N_fert_EF nfert, """ + self.db.constantsSchema + """.CS_WS_SG_Napp N_app
 
@@ -299,7 +300,7 @@ INSERT INTO """ + feed + """_nfert
 
         (2801700003) AS SCC,
 
-        'Nitrogen Solutions Fertilizer Emissions' AS "Description"
+        'Amonium Sulfate Fertilizer Emissions' AS "Description"
 
         FROM  """ + self.db.productionSchema + """.sg_data sg, """ + self.db.constantsSchema + """.N_fert_EF nfert, """ + self.db.constantsSchema + """.CS_WS_SG_Napp N_app
 

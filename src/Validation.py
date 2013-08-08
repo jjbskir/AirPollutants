@@ -37,13 +37,13 @@ class Validation:
         alphabetL = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
         alphabetU = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
         if not title:
-            self.error('Must enter a run title.')
+            return self.error('Must enter a run title.')
         elif len(title) > 8:
-            self.error('Title must be less than 9 characters.')
+            return self.error('Title must be less than 9 characters.')
         elif title[0] not in alphabetL and title[0] not in alphabetU:
-            self.error('Title`s first character must be letter.')
+            return self.error('Title`s first character must be letter.')
         elif ' ' in title:
-            self.error('Title cannot contain spaces.')
+            return self.error('Title cannot contain spaces.')
         else:
             return True
     
@@ -66,10 +66,13 @@ class Validation:
     @return: True if criteria are met, false otherwise. boolean
     '''
     def fertDist(self, fertDists):
+        # if they don't enter anything, then return true.
+        if all(fertDist == None for fertDist in fertDists.values()):
+            return True
         for fertDist in fertDists.values():
-            # if they don't enter anything, then return true.
+            # if the current fertilization distribution is blank.
             if not fertDist:
-                return True
+                continue
             # make sure all of the entries are numbers and sum to 1.
             sumDist = 0.0
             try:
@@ -79,6 +82,7 @@ class Validation:
                 return self.error('Must enter a number for fertilizer distributions.') 
             if sumDist != 1:
                 return self.error('Distribion must sum to 1.') 
+        return True
     
     '''
     Fertilizer validation. Should validate on it's own. Would only be set off
@@ -88,7 +92,7 @@ class Validation:
     @return: True if all conditions are met, false otherswise. boolean.
     '''
     def ferts(self, ferts):
-        if len(ferts.values()) >= 6:
+        if len(ferts.values()) >= 5:
             return self.error('Fertilizer Error.') 
         else: return True
      

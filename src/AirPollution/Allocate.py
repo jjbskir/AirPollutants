@@ -19,7 +19,8 @@ class Allocate(object):
     def initializeAloFile(self, state, run_code, episodeYear):
         self.episodeYear = episodeYear         
         self.run_code = run_code
-        self.inicatorTotal = 0.0     
+        # total harvested acre per a state.
+        self.inicatorTotal = 0.0   #acres  
         self.alo_file = open(self.path + state + '_' + run_code+'.alo', 'w')
         lines = """
 ------------------------------------------------------------------------

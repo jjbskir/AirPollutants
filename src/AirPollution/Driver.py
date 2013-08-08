@@ -203,7 +203,7 @@ class Driver:
         #Populate Combustion Emissions Tables
         print "Populating tables with combustion emissions..."
         Comb.populateTables(self.run_codes, self.modelRunTitle)
-#        Comb.updateSG()
+        Comb.updateSG()
         print "...COMPLETED populating tables with combustion emissions."
     #----------------------------------------------------------------
         
@@ -266,9 +266,10 @@ class Driver:
             print 'Creating emissions per acre figure.'
             EmissionsPerAcreFigure(self.cont)
             
-            '''
+            
             #Ratio to NEI
-            ratioNEI = RatioToNEIFigure.RatioToNEIFig(self.cont)
+            RatioToNEIFigure.RatioToNEIFig(self.cont)
+            '''
             for feedstock in feedstockList:
                 pass
             

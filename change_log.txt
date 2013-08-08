@@ -194,4 +194,9 @@ new code: Population File    : """ + self.outPathPopAlo + 'POP\\' + self.state +
 
 
 
-
+8/5/2013
+NEIComparision.__init__() line 18
+# Old NEI data from Noah.
+#self.nei_data_by_county = self.db.constantsSchema + ".nei_data_by_county"
+# new NEI data from Jeremy.
+self.nei_data_by_county = "full2008nei.nei_nonroad_nonpoint"

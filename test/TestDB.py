@@ -1,4 +1,4 @@
-from Database import Database
+from model.Database import Database
 '''
 Uses a test schema and a new scenario schema from the database
 and tests to see if the data is the same. 
@@ -67,3 +67,14 @@ class TestDB(Database):
         else:
             print "Same Database!"
             return True
+
+if __name__ == "__main__": 
+    test = TestDB('sgnew', 'sgrun')
+    testScenario = test.getScenario(test.testSchema)
+    newScenario = test.getScenario(test.schema)
+    test.compareScenarios(newScenario, testScenario)
+    
+    
+    
+    
+    

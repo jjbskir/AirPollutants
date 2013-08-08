@@ -12,7 +12,11 @@ class NEIComparison(SaveDataHelper.SaveDataHelper):
         self.cellulosicAllocation = 0.34
         self.cornGrainAllocation = 0.54
         
-        self.nei_data_by_county = self.db.constantsSchema + ".nei_data_by_county"
+        # Old NEI data from Noah.
+        #self.nei_data_by_county = self.db.constantsSchema + ".nei_data_by_county"
+        # new NEI data from Jeremy.
+        # nei_nonroad_nonpoint and nei_total
+        self.nei_data_by_county = "full2008nei.nei_total"
         
         query = """
 CREATE TABLE summedEmissions
@@ -211,7 +215,8 @@ nh3    float);"""
             f = 'Forest Residue' 
         
         
-        
+        # self.db.constantsSchema + ".nei_data_by_county"
+        #TODO: Change where nei data is collected from to fullnei2008.nei_total
         query = """
 INSERT INTO """+feedstock+"""_NEIRatio
 WITH
@@ -238,13 +243,11 @@ WITH
     LEFT JOIN nrel ON c.fips = nrel.fips
 
     LEFT JOIN nei ON c.fips = nei.fips
+    
+    WHERE nei.nh3 IS NOT NULL
+
 
 """
-        
-        
-        
-        
-        
         self._executeQuery(query)
         
         

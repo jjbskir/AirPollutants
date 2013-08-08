@@ -353,16 +353,45 @@ class CornGrainIrrigationPop(Population):
         Population.__init__(self, cont, episodeYear, run_code)
     
     '''
-    @param dat: All of the data.
-    Saved for later. 
+    @param dat: All of the data. Saved for later.       
+    0 fips: fips
+    1 st: state
+    2 (total_harv_ac * perc): harvested acres * percentage of land irrigated.
+    3 total_prod: total produce.
+    4 fuel: fuel type, Diesel, Gasoline, LPG, CNG
+    5 hp: horsepower. 
+    6 perc: percent of land use.
+    7 hpa: irrigation hrs/acre
     ''' 
     def initializePop(self, dat):
         Population.initializePop(self, dat)
         self.dat = dat
 
 
-    def append_Pop(self, fips, indicator1):
+    def append_Pop(self, fips, dat):
+        """
+        # state fips
+        st_fips = fips[0:2]
+        # hp
+        hp = dat[5]
+        # hrs/acre
+        hpa = dat[7]
+        """
         pass
+    
+    '''
+    Used to make sure hp is in the correct ranges for NONROAD. If it is too high, the hp is halved
+    and the hours per acre is doubled.
+    @param hp: Horse power.
+    @param hpa: Hours per acre.
+    @param maxHp: Max hp NONROAD can take. 
+    @return: Horse power and hourse per acre changed. 
+    '''
+    def hpCheck(self, hp, hpa, maxHp):
+        while hp >= maxHp:
+            hp = hp / 2.0
+            hpa = hpa * 2.0
+        return hp, hpa
 
     '''
     Finishes the population file.
@@ -379,9 +408,9 @@ class CornGrainIrrigationPop(Population):
         # hrs/acre
         hpa = self.dat[7]
 
-
         #Gasoline Irrigation
         if self.run_code.endswith('G'):     
+            hp, hpa = self.hpCheck(hp, hpa, 300)
             hp_array = ['0']*7
             # pop = (acres * hrs/acre) / (hrs/yr) = yr
             pop = round(indicator * hpa / self.activity_gas,10)            
@@ -394,7 +423,6 @@ class CornGrainIrrigationPop(Population):
             elif hp < 175: hp_array[5] = pop
             elif hp < 300: hp_array[6] = pop
             
-                
             lines ="""%s000       %s 2265005060 4-Str Irrigation Sets                        3     6 4.692   200  DEFAULT        %s
 %s000       %s 2265005060 4-Str Irrigation Sets                        6    11 8.918   400  DEFAULT        %s
 %s000       %s 2265005060 4-Str Irrigation Sets                       16    25    18   750  DEFAULT        %s
@@ -414,6 +442,7 @@ class CornGrainIrrigationPop(Population):
         #LPG Irrigation, only one hp range is modeled in Nonroad
         if self.run_code.endswith('L'):
             # pop = (acres * hrs/acre) / (hrs/yr) = yr
+            hp, hpa = self.hpCheck(hp, hpa, 175)
             pop = round(indicator * hpa / self.activity_lpg,10)
             lines = """%s000       %s 2267005060 LPG - Irrigation Sets                      100   175   113  3000  DEFAULT        %s
 """ % (st_fips, self.episodeYear, pop)
@@ -421,6 +450,7 @@ class CornGrainIrrigationPop(Population):
     
         #CNG Irrigation
         if self.run_code.endswith('C'):
+            hp, hpa = self.hpCheck(hp, hpa, 600)
             hp_array = ['0']*6
             # pop = (acres * hrs/acre) / (hrs/yr) = yr
             pop = round(indicator * hpa / self.activity_cng,10)            
@@ -448,7 +478,7 @@ class CornGrainIrrigationPop(Population):
 
         #Diesel Irrigation
         if self.run_code.endswith('D'):
-
+            hp, hpa = self.hpCheck(hp, hpa, 750)
             hp_array = ['0']*11
             # pop = (acres * hrs/acre) / (hrs/yr) = yr
             pop = round(indicator * hpa / self.activity_diesel,10)            
@@ -494,7 +524,19 @@ class CornGrainIrrigationPop(Population):
         self.pop_file.writelines(lines)
 
         self.pop_file.close()
-        
+       
+       
+    def _diesel(self):
+        pass
+    
+    def _gasoline(self):
+        pass
+    
+    def _lpg(self):
+        pass
+    
+    def _cng(self):
+        pass
         
 
 """
