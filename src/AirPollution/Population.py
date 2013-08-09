@@ -365,20 +365,28 @@ class CornGrainIrrigationPop(Population):
     ''' 
     def initializePop(self, dat):
         Population.initializePop(self, dat)
-        self.dat = dat
 
 
     def append_Pop(self, fips, dat):
-        """
-        # state fips
-        st_fips = fips[0:2]
         # hp
         hp = dat[5]
         # hrs/acre
         hpa = dat[7]
-        """
-        pass
-    
+        # irrigated acres
+        indicator = dat[2]
+        #Gasoline Irrigation
+        if self.run_code.endswith('G'):     
+            self._gasoline(fips, hp, hpa, indicator)
+        #LPG Irrigation, only one hp range is modeled in Nonroad
+        if self.run_code.endswith('L'):
+            self._lpg(fips, hp, hpa, indicator)
+        #CNG Irrigation
+        if self.run_code.endswith('C'):
+            self._cng(fips, hp, hpa, indicator)
+        #Diesel Irrigation
+        if self.run_code.endswith('D'):
+            self._diesel(fips, hp, hpa, indicator)
+
     '''
     Used to make sure hp is in the correct ranges for NONROAD. If it is too high, the hp is halved
     and the hours per acre is doubled.
@@ -392,151 +400,128 @@ class CornGrainIrrigationPop(Population):
             hp = hp / 2.0
             hpa = hpa * 2.0
         return hp, hpa
-
+    
     '''
-    Finishes the population file.
-    For irrigation this is most of the class.
-    @param indicator: Indicator total from allocation class. acres
+    Create diesel population.
     '''
-    def finishPop(self, indicator):
-        if self.dat[0] < 9999: fips = '0'+str(self.dat[0])
-        else: fips = str(self.dat[0])
-        # state fips
-        st_fips = fips[0:2]
-        # hp
-        hp = self.dat[5]
-        # hrs/acre
-        hpa = self.dat[7]
-
-        #Gasoline Irrigation
-        if self.run_code.endswith('G'):     
-            hp, hpa = self.hpCheck(hp, hpa, 300)
-            hp_array = ['0']*7
-            # pop = (acres * hrs/acre) / (hrs/yr) = yr
-            pop = round(indicator * hpa / self.activity_gas,10)            
-                
-            if hp < 6: hp_array[0] = pop
-            elif hp < 11: hp_array[1] = pop
-            elif hp < 25: hp_array[2] = pop
-            elif hp < 75: hp_array[3] = pop
-            elif hp < 100: hp_array[4] = pop
-            elif hp < 175: hp_array[5] = pop
-            elif hp < 300: hp_array[6] = pop
+    def _diesel(self, fips, hp, hpa, indicator):
+        hp, hpa = self.hpCheck(hp, hpa, 750)
+        hp_array = ['0']*11
+        # pop = (acres * hrs/acre) / (hrs/yr) = yr
+        pop = round(indicator * hpa / self.activity_diesel, 10)            
             
-            lines ="""%s000       %s 2265005060 4-Str Irrigation Sets                        3     6 4.692   200  DEFAULT        %s
-%s000       %s 2265005060 4-Str Irrigation Sets                        6    11 8.918   400  DEFAULT        %s
-%s000       %s 2265005060 4-Str Irrigation Sets                       16    25    18   750  DEFAULT        %s
-%s000       %s 2265005060 4-Str Irrigation Sets                       50    75  59.7  3000  DEFAULT        %s
-%s000       %s 2265005060 4-Str Irrigation Sets                       75   100 80.25  3000  DEFAULT        %s
-%s000       %s 2265005060 4-Str Irrigation Sets                      100   175 120.5  3000  DEFAULT        %s
-%s000       %s 2265005060 4-Str Irrigation Sets                      175   300 210.2  3000  DEFAULT        %s
-""" % (st_fips, self.episodeYear, hp_array[0],
-       st_fips, self.episodeYear, hp_array[1],
-       st_fips, self.episodeYear, hp_array[2],
-       st_fips, self.episodeYear, hp_array[3],
-       st_fips, self.episodeYear, hp_array[4],
-       st_fips, self.episodeYear, hp_array[5],
-       st_fips, self.episodeYear, hp_array[6])
-
-
-        #LPG Irrigation, only one hp range is modeled in Nonroad
-        if self.run_code.endswith('L'):
-            # pop = (acres * hrs/acre) / (hrs/yr) = yr
-            hp, hpa = self.hpCheck(hp, hpa, 175)
-            pop = round(indicator * hpa / self.activity_lpg,10)
-            lines = """%s000       %s 2267005060 LPG - Irrigation Sets                      100   175   113  3000  DEFAULT        %s
-""" % (st_fips, self.episodeYear, pop)
+        if hp < 11: hp_array[0] = pop
+        elif hp < 16: hp_array[1] = pop
+        elif hp < 25: hp_array[2] = pop
+        elif hp < 40: hp_array[3] = pop
+        elif hp < 50: hp_array[4] = pop
+        elif hp < 75: hp_array[5] = pop
+        elif hp < 100: hp_array[6] = pop
+        elif hp < 175: hp_array[7] = pop
+        elif hp < 300: hp_array[8] = pop
+        elif hp < 600: hp_array[9] = pop
+        elif hp < 750: hp_array[10] = pop
+          
+        lines = """
+%s       %s 2270005060 Dsl - Irrigation Sets                        6    11     8  2500  DEFAULT        %s
+%s       %s 2270005060 Dsl - Irrigation Sets                       11    16  15.6  2500  DEFAULT        %s
+%s       %s 2270005060 Dsl - Irrigation Sets                       16    25 21.88  2500  DEFAULT        %s
+%s       %s 2270005060 Dsl - Irrigation Sets                       25    40    33  2500  DEFAULT        %s
+%s       %s 2270005060 Dsl - Irrigation Sets                       40    50 45.08  2500  DEFAULT        %s
+%s       %s 2270005060 Dsl - Irrigation Sets                       50    75 60.24  4667  DEFAULT        %s
+%s       %s 2270005060 Dsl - Irrigation Sets                       75   100 85.87  4667  DEFAULT        %s
+%s       %s 2270005060 Dsl - Irrigation Sets                      100   175 136.3  4667  DEFAULT        %s
+%s       %s 2270005060 Dsl - Irrigation Sets                      175   300 224.5  4667  DEFAULT        %s
+%s       %s 2270005060 Dsl - Irrigation Sets                      300   600   390  7000  DEFAULT        %s
+%s       %s 2270005060 Dsl - Irrigation Sets                      600   750 704.7  7000  DEFAULT        %s
+""" % (fips, self.episodeYear, hp_array[0],
+   fips, self.episodeYear, hp_array[1],
+   fips, self.episodeYear, hp_array[2],
+   fips, self.episodeYear, hp_array[3],
+   fips, self.episodeYear, hp_array[4],
+   fips, self.episodeYear, hp_array[5],
+   fips, self.episodeYear, hp_array[6],
+   fips, self.episodeYear, hp_array[7],
+   fips, self.episodeYear, hp_array[8],
+   fips, self.episodeYear, hp_array[9],
+   fips, self.episodeYear, hp_array[10])
+        self.pop_file.writelines(lines)
     
-    
-        #CNG Irrigation
-        if self.run_code.endswith('C'):
-            hp, hpa = self.hpCheck(hp, hpa, 600)
-            hp_array = ['0']*6
-            # pop = (acres * hrs/acre) / (hrs/yr) = yr
-            pop = round(indicator * hpa / self.activity_cng,10)            
-                
-            if hp < 40: hp_array[0] = pop
-            elif hp < 75: hp_array[1] = pop
-            elif hp < 100: hp_array[2] = pop
-            elif hp < 175: hp_array[3] = pop
-            elif hp < 300: hp_array[4] = pop
-            elif hp < 600: hp_array[5] = pop
-
-            lines = """%s000       %s 2268005060 CNG - Irrigation Sets                       25    40    32  1500  DEFAULT        %s
-%s000       %s 2268005060 CNG - Irrigation Sets                       50    75 72.78  3000  DEFAULT        %s
-%s000       %s 2268005060 CNG - Irrigation Sets                       75   100 96.19  3000  DEFAULT        %s
-%s000       %s 2268005060 CNG - Irrigation Sets                      100   175 138.9  3000  DEFAULT        %s
-%s000       %s 2268005060 CNG - Irrigation Sets                      175   300 233.3  3000  DEFAULT        %s
-%s000       %s 2268005060 CNG - Irrigation Sets                      300   600 384.4  3000  DEFAULT        %s
-""" % (st_fips, self.episodeYear, hp_array[0],
-       st_fips, self.episodeYear, hp_array[1],
-       st_fips, self.episodeYear, hp_array[2],
-       st_fips, self.episodeYear, hp_array[3],
-       st_fips, self.episodeYear, hp_array[4],
-       st_fips, self.episodeYear, hp_array[5])
-
-
-        #Diesel Irrigation
-        if self.run_code.endswith('D'):
-            hp, hpa = self.hpCheck(hp, hpa, 750)
-            hp_array = ['0']*11
-            # pop = (acres * hrs/acre) / (hrs/yr) = yr
-            pop = round(indicator * hpa / self.activity_diesel,10)            
-                
-            if hp < 11: hp_array[0] = pop
-            elif hp < 16: hp_array[1] = pop
-            elif hp < 25: hp_array[2] = pop
-            elif hp < 40: hp_array[3] = pop
-            elif hp < 50: hp_array[4] = pop
-            elif hp < 75: hp_array[5] = pop
-            elif hp < 100: hp_array[6] = pop
-            elif hp < 175: hp_array[7] = pop
-            elif hp < 300: hp_array[8] = pop
-            elif hp < 600: hp_array[9] = pop
-            elif hp < 750: hp_array[10] = pop
-
-                        
-            lines = """%s000       %s 2270005060 Dsl - Irrigation Sets                        6    11     8  2500  DEFAULT        %s
-%s000       %s 2270005060 Dsl - Irrigation Sets                       11    16  15.6  2500  DEFAULT        %s
-%s000       %s 2270005060 Dsl - Irrigation Sets                       16    25 21.88  2500  DEFAULT        %s
-%s000       %s 2270005060 Dsl - Irrigation Sets                       25    40    33  2500  DEFAULT        %s
-%s000       %s 2270005060 Dsl - Irrigation Sets                       40    50 45.08  2500  DEFAULT        %s
-%s000       %s 2270005060 Dsl - Irrigation Sets                       50    75 60.24  4667  DEFAULT        %s
-%s000       %s 2270005060 Dsl - Irrigation Sets                       75   100 85.87  4667  DEFAULT        %s
-%s000       %s 2270005060 Dsl - Irrigation Sets                      100   175 136.3  4667  DEFAULT        %s
-%s000       %s 2270005060 Dsl - Irrigation Sets                      175   300 224.5  4667  DEFAULT        %s
-%s000       %s 2270005060 Dsl - Irrigation Sets                      300   600   390  7000  DEFAULT        %s
-%s000       %s 2270005060 Dsl - Irrigation Sets                      600   750 704.7  7000  DEFAULT        %s
-""" % (st_fips, self.episodeYear, hp_array[0],
-       st_fips, self.episodeYear, hp_array[1],
-       st_fips, self.episodeYear, hp_array[2],
-       st_fips, self.episodeYear, hp_array[3],
-       st_fips, self.episodeYear, hp_array[4],
-       st_fips, self.episodeYear, hp_array[5],
-       st_fips, self.episodeYear, hp_array[6],
-       st_fips, self.episodeYear, hp_array[7],
-       st_fips, self.episodeYear, hp_array[8],
-       st_fips, self.episodeYear, hp_array[9],
-       st_fips, self.episodeYear, hp_array[10])
+    '''
+    Create gasoline population.
+    '''
+    def _gasoline(self, fips, hp, hpa, indicator):
+        hp, hpa = self.hpCheck(hp, hpa, 300)
+        hp_array = ['0']*7
+        # pop = (acres * hrs/acre) / (hrs/yr) = yr
+        pop = round(indicator * hpa / self.activity_gas,10)            
+            
+        if hp < 6: hp_array[0] = pop
+        elif hp < 11: hp_array[1] = pop
+        elif hp < 25: hp_array[2] = pop
+        elif hp < 75: hp_array[3] = pop
+        elif hp < 100: hp_array[4] = pop
+        elif hp < 175: hp_array[5] = pop
+        elif hp < 300: hp_array[6] = pop
         
-        
-        lines+= """/END/"""        
+        lines ="""
+%s       %s 2265005060 4-Str Irrigation Sets                        3     6 4.692   200  DEFAULT        %s
+%s       %s 2265005060 4-Str Irrigation Sets                        6    11 8.918   400  DEFAULT        %s
+%s       %s 2265005060 4-Str Irrigation Sets                       16    25    18   750  DEFAULT        %s
+%s       %s 2265005060 4-Str Irrigation Sets                       50    75  59.7  3000  DEFAULT        %s
+%s       %s 2265005060 4-Str Irrigation Sets                       75   100 80.25  3000  DEFAULT        %s
+%s       %s 2265005060 4-Str Irrigation Sets                      100   175 120.5  3000  DEFAULT        %s
+%s       %s 2265005060 4-Str Irrigation Sets                      175   300 210.2  3000  DEFAULT        %s
+""" % (fips, self.episodeYear, hp_array[0],
+   fips, self.episodeYear, hp_array[1],
+   fips, self.episodeYear, hp_array[2],
+   fips, self.episodeYear, hp_array[3],
+   fips, self.episodeYear, hp_array[4],
+   fips, self.episodeYear, hp_array[5],
+   fips, self.episodeYear, hp_array[6])
         self.pop_file.writelines(lines)
 
-        self.pop_file.close()
-       
-       
-    def _diesel(self):
-        pass
+    '''
+    Create liquid propane population.
+    '''
+    def _lpg(self, fips, hp, hpa, indicator):
+        # pop = (acres * hrs/acre) / (hrs/yr) = yr
+        hp, hpa = self.hpCheck(hp, hpa, 175)
+        pop = round(indicator * hpa / self.activity_lpg,10)
+        lines = """%s       %s 2267005060 LPG - Irrigation Sets                      100   175   113  3000  DEFAULT        %s
+""" % (fips, self.episodeYear, pop)
+        self.pop_file.writelines(lines)
     
-    def _gasoline(self):
-        pass
-    
-    def _lpg(self):
-        pass
-    
-    def _cng(self):
-        pass
+    '''
+    Created compressed natraul gas population.
+    '''
+    def _cng(self, fips, hp, hpa, indicator):
+        hp, hpa = self.hpCheck(hp, hpa, 600)
+        hp_array = ['0']*6
+        # pop = (acres * hrs/acre) / (hrs/yr) = yr
+        pop = round(indicator * hpa / self.activity_cng,10)            
+            
+        if hp < 40: hp_array[0] = pop
+        elif hp < 75: hp_array[1] = pop
+        elif hp < 100: hp_array[2] = pop
+        elif hp < 175: hp_array[3] = pop
+        elif hp < 300: hp_array[4] = pop
+        elif hp < 600: hp_array[5] = pop
+
+        lines = """
+%s       %s 2268005060 CNG - Irrigation Sets                       25    40    32  1500  DEFAULT        %s
+%s       %s 2268005060 CNG - Irrigation Sets                       50    75 72.78  3000  DEFAULT        %s
+%s       %s 2268005060 CNG - Irrigation Sets                       75   100 96.19  3000  DEFAULT        %s
+%s       %s 2268005060 CNG - Irrigation Sets                      100   175 138.9  3000  DEFAULT        %s
+%s       %s 2268005060 CNG - Irrigation Sets                      175   300 233.3  3000  DEFAULT        %s
+%s       %s 2268005060 CNG - Irrigation Sets                      300   600 384.4  3000  DEFAULT        %s
+""" % (fips, self.episodeYear, hp_array[0],
+   fips, self.episodeYear, hp_array[1],
+   fips, self.episodeYear, hp_array[2],
+   fips, self.episodeYear, hp_array[3],
+   fips, self.episodeYear, hp_array[4],
+   fips, self.episodeYear, hp_array[5])
+        self.pop_file.writelines(lines)
         
 
 """

@@ -114,7 +114,7 @@ class Driver:
                     #write *.opt file, close allocation file, close *.pop file            
                     Opt.NROptionFile(self.cont, state, fips_prior, run_code, scenario.episodeYear)
                     alo.writeSumAndClose(fips_prior)
-                    self._popFinishHelper(pop, alo.inicatorTotal)
+                    pop.finishPop()
                     self.batch.append(state, run_code)
                             
                     fips_prior = fips
@@ -131,7 +131,7 @@ class Driver:
             #close allocation files    
             Opt.NROptionFile(self.cont, state, fips_prior, run_code, scenario.episodeYear)        
             alo.writeSumAndClose(fips_prior)
-            self._popFinishHelper(pop, alo.inicatorTotal)
+            pop.finishPop()
             self.batch.append(state, run_code)
             self.batch.finish(run_code)
         
@@ -140,16 +140,6 @@ class Driver:
         # save path for running batch files.
         # why is this here?
         self.path = scenario.path
-    
-    '''
-    If the run code is CG_I, then another input parameter is needed
-    to finishPop().
-    '''
-    def _popFinishHelper(self, pop, indicator):
-        if not pop.run_code.startswith('CG_I'):
-            pop.finishPop()
-        else:
-            pop.finishPop(indicator) 
      
     '''
     Run the NONROAD program by opening the batch files.

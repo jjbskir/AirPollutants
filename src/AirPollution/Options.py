@@ -133,7 +133,8 @@ class ScenarioOptions:
                 # Came to this conclusiong b/c in the CG part.
                 ###########   
                 '''
-
+                '''
+                #old query.
                 if run_code.endswith('D'): fuel_type = 'A'
                 elif run_code.endswith('G'): fuel_type = 'B'
                 elif run_code.endswith('L'): fuel_type = 'C'
@@ -169,8 +170,8 @@ class ScenarioOptions:
                             order by ca.fips asc
                     """ % (self.db.constantsSchema, fuel_type, fuel_type, fuel_type, fuel_type, self.db.productionSchema)
                     
-                    
-                '''             
+                '''    
+                         
                 if run_code.endswith('D'): fuel_type = 'diesel'
                 elif run_code.endswith('G'): fuel_type = 'gasoline'
                 elif run_code.endswith('L'): fuel_type = 'lpg'
@@ -192,7 +193,7 @@ class ScenarioOptions:
                 WHERE ca.st ilike irr.state
                 order by ca.fips asc
                 """
-                '''
+                
     
                
                   

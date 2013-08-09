@@ -214,6 +214,7 @@ INSERT INTO """ + feed + """_nfert
     '''
     TODO: is the GROUP BY correct? sg.fips is the only row that is being selected.
     sg.prod, nfert.nox_nsol, nfert.nh3_nsol, N_app.SG are not. Should not affect query.
+    Nitrogen solution is the default fertilizer.
     '''
     def __switchgrass__(self, feed):
         '''

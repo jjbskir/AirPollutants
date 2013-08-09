@@ -353,16 +353,16 @@ class SG_FugitiveDust(SaveDataHelper.SaveDataHelper):
         
         elif operation == 'Harvest':
             emissionFactors = [
-                                    3.6, #year 1 harvest emission factor
-                                    3.6, #year 2
-                                    3.6, #year 3
-                                    3.6, #year 4
-                                    3.6, #year 5
-                                    3.6, #year 6
-                                    3.6, #year 7
-                                    3.6, #year 8
-                                    3.6, #year 9
-                                    3.6 #year 10
+                                    2.4, #year 1 harvest emission factor
+                                    2.4, #year 2
+                                    2.4, #year 3
+                                    2.4, #year 4
+                                    2.4, #year 5
+                                    2.4, #year 6
+                                    2.4, #year 7
+                                    2.4, #year 8
+                                    2.4, #year 9
+                                    2.4 #year 10
                                     ]
             self.description = 'SG_H'
             
@@ -372,12 +372,12 @@ class SG_FugitiveDust(SaveDataHelper.SaveDataHelper):
                                     2.0, #year 2
                                     0.8, #year 3
                                     0.8, #year 4
-                                    2.8, #year 5
+                                    1.6, #year 5
                                     0.8, #year 6
                                     0.8, #year 7
                                     0.8, #year 8
                                     0.8, #year 9
-                                    0.8 #year 10
+                                    0.0 #year 10
                                     ]
             self.description = 'SG_N'
         
