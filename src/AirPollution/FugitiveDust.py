@@ -196,8 +196,8 @@ class FugitiveDust(SaveDataHelper.SaveDataHelper):
 # --emission factors: 
         pmTransport = (1.2 * 0.907) / 2000 # dt / acre
         
-        pmReduTillHarv = (3.0 * 0.907) / 2000 # dt / acre
-        pmNoTillHarv = (3.0 * 0.907) / 2000 # dt / acre
+        pmReduTillHarv = (1.8 * 0.907) / 2000 # dt / acre
+        pmNoTillHarv = (1.8 * 0.907) / 2000 # dt / acre
 # --     
 
 # choose operation for reduced till
@@ -259,8 +259,8 @@ class FugitiveDust(SaveDataHelper.SaveDataHelper):
 # --emission factors: 
         pmTransport = (1.2 * 0.907) / 2000  # dt / acre
         
-        pmReduTillHarv = (3.0 * 0.907) / 2000 # dt / acre
-        pmNoTillHarv = (3.0 * 0.907) / 2000 # dt / acre
+        pmReduTillHarv = (1.8 * 0.907) / 2000 # dt / acre
+        pmNoTillHarv = (1.8 * 0.907) / 2000 # dt / acre
 # --     
 
 # choose operation for reduced till
