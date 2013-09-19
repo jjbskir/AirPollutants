@@ -55,6 +55,7 @@ if __name__ == "__main__":
     d.saveData(fertFeed, fertDist, pestFeed, operationDict, alloc)
     
     '''
+    #For running the GUI.
     db = Database(None)
     m = Model(db)
     

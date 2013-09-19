@@ -29,7 +29,7 @@ class RatioToNEIFig():
         pollutantList = ['NH3','NOX','VOC','PM25','PM10','CO','SOX']
     #define inputs/constants:  
         data_labels = ['$NH_3$','$NO_x$','$VOC$','$PM_{2.5}$','$PM_{10}$','$CO$','$SO_x$'] 
-        feedstockList = ['corn grain', 'cellulosic', 'switchgrass','corn stover','wheat straw','forest residue', 'all biofuel feedstocks']
+        feedstockList = ['corn grain', 'switchgrass','corn stover','wheat straw','forest residue', 'cellulosic']
     
      
     #return number arrays for plotting   
@@ -38,7 +38,7 @@ class RatioToNEIFig():
         
         plotTitle=''
     
-        for feedstock in range(5):
+        for feedstock in range(6):
             if feedstock == 0:
     #-----------------Model Corn Grain Scenario    
                 queryTable = "cg_neiratio" 
@@ -58,6 +58,9 @@ class RatioToNEIFig():
             elif feedstock == 4:
     #-----------------Model Forest Residue scenario
                 queryTable = "fr_neiratio"    
+            elif feedstock == 5:
+    #-----------------Model all cellulosic
+                queryTable = "cellulosic_neiratio"    
                 
             print queryTable
                 
@@ -102,14 +105,21 @@ class RatioToNEIFig():
             
         
     def __collectData__(self, queryTable):
+        pollutants = ['nh3', 'nox', 'voc', 'pm25', 'pm10', 'co', 'sox']
+        neiData = {}
+        for poll in pollutants:
+            neiData[poll] = self._makeQuery(poll, queryTable)
+            
+        
+        '''
         query = """SELECT nh3, nox, voc, pm25, pm10, co, sox 
                 FROM %s.%s 
                 WHERE co > 0.0 AND sox > 0.0;"""  % (self.db.schema, queryTable)
         data = self.db.output(query, self.db.schema)
         
-#        #create arrays for the data
+        #create arrays for the data
         data_matrix = matrix(data)
-#        
+        
         #store data in a plottable format
         nh3 = array(data_matrix[:,0])
         nox = array(data_matrix[:,1])
@@ -120,8 +130,16 @@ class RatioToNEIFig():
         sox = array(data_matrix[:,6])
         
         return [nh3, nox, voc, pm25, pm10, co, sox]
+        '''
+        return [neiData[p] for p in pollutants]
 
-
+    def _makeQuery(self, pollutant, queryTable):
+        query = """SELECT """ + pollutant + """
+                FROM """ + self.db.schema + """.""" + queryTable + """
+                WHERE """ + pollutant + """ > 0.0;"""  
+        data = self.db.output(query, self.db.schema)
+        return data
+        
     
     """
     function to capture confidence interfals for co. Because the input data has the 
@@ -178,7 +196,7 @@ class RatioToNEIFig():
         # Hide these grid behind plot objects
         self.ax1.set_axisbelow(True)
     
-        self.ax1.set_ylabel(axisTitle)    
+        self.ax1.set_ylabel(axisTitle, size=15, style='normal')    
     #manually enter axis tick labels because they need to be the same for all plots.     
         self.ax1.set_yticklabels(['$10^{-6}$','$10^{-5}$','$10^{-4}$','$10^{-3}$','$10^{-2}$','$10^{-1}$','$1$'],
                              size=15,weight='bold', style='normal')
@@ -192,7 +210,8 @@ class RatioToNEIFig():
         self.ax1.set_ylim(bottom, top)
     #    ax1.xaxis.set_visible(False)
         
-        self.ax1.annotate('N = '+str(shape(data_array)[1])+' counties', xy=(6.5, 1), xytext=(5.5, 1))
+        # Removed the number of counties that are used. Because alot of the NEI data does not use NH3 data which messes up this function.
+        #self.ax1.annotate('N = '+str(shape(data_array)[1])+' counties', xy=(6.5, 1), xytext=(5.5, 1))
     
        
         
@@ -300,4 +319,16 @@ class RatioToNEIFig():
                 
         return threshTable
     
+if __name__ == "__main__": 
+    from model.Database import Database
+    import Container
     
+    title = 'sgNew'
+    cont = Container.Container()
+    cont.set('path', 'C:/Nonroad/%s/' % (title))
+    cont.set('db', Database(title))
+    
+    # Emissions per a production lb figure.
+    print 'Creating NEI comparision figure.'
+    RatioToNEIFig(cont)
+        

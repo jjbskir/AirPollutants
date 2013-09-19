@@ -200,3 +200,14 @@ NEIComparision.__init__() line 18
 #self.nei_data_by_county = self.db.constantsSchema + ".nei_data_by_county"
 # new NEI data from Jeremy.
 self.nei_data_by_county = "full2008nei.nei_nonroad_nonpoint"
+
+
+        # @change: Change allocation. Allocation is the amount of the feedstock that actually get's used to produce ethanol.
+        # 9/3
+        # old code:     self.cellulosicAllocation = 0.34
+        #               self.cornGrainAllocation = 0.54
+        # new code:     allocation = 0.52
+        # @change: convert NEI data from short tons to metric tons.
+        # 9/11
+        # old code:     nei.nox
+        # new code:     nei.nox * 0.907185

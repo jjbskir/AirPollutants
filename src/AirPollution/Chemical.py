@@ -37,14 +37,13 @@ class Chemical(SaveDataHelper.SaveDataHelper):
         
         
     '''
-    emmisions = harvested acres * lbs/acre * Evaporation rate * VOC content (lbs VOC / lb active ingridient) * lbs active / lb  VOC
+    emmisions = harvested acres * lbs/acre * Evaporation rate * VOC content (lbs VOC / lb active ingridient) * conversion from lbs to mt.
     emmisions = total VOC emmisions (lbs VOC).
     total_harv_ac = total harvested acres. (acres)
     pest.EF = lbs VOC/acre.
-    .9 =  evaporation rate. lbs pesticide/lbs VOC
-    .835 = lbs VOC / lb active ingridient.
-    .9070 = lbs active / lbs pesticide.
-    (acres) * (lbs VOC/acre) * (lbs pesticide/lbs VOC)? * (lbs VOC/lbs active) * (lbs active/lbs pesticide) = lbs VOC
+    .9 =  evaporation rate. (lbs active/lbs VOC)
+    .835 = voc content. lbs VOC / lb active ingridient.
+    (acres) * (lbs VOC/acre) * (lbs active/lbs VOC) * (lbs VOC/lbs active) * (mt/lbs) = mt VOC
     '''
     def __cornGrain__(self):
         chemQuery = """
@@ -67,8 +66,8 @@ INSERT INTO cg_chem
     '''
     Recieves several different fertilizers: Quinclorac, Attrazine, 2 and 4-D-Amine
     Multiply by .1 b/c it is switch grass on a ten year cycle.
-    emmisions = .1 * harvested acres * lbs/acre * Evaporation rate * VOC content (lbs VOC / lb active ingridient) * lbs active / lb  VOC
-    emmisions (lbs VOC)
+    emmisions = .1 * harvested acres * lbs/acre * Evaporation rate * VOC content (lbs VOC / lb active ingridient) * conversion lbs to mt  VOC
+    emmisions (mt VOC)
     '''                                     
     def __switchgrass__(self):
         

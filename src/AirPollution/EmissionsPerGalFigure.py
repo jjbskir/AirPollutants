@@ -82,8 +82,8 @@ class EmissionsPerGallon():
         for fNum, feedstock in enumerate(feedstockList):
             '''
             queryTable = summedemissions
-            emmisions = (pollutant lbs) / ( (feed stock lbs) * (gallons / feed stock lb) )
-            emmisions = (pollutant lbs / gallons)
+            emmisions = (pollutant mt) / ( (feed stock dt) * (gallons / feed stock lb) )
+            emmisions = (pollutant mt / gallons)
             SELECT (%s) / (prod * %s * 1e-6) FROM %s.%s WHERE prod > 0.0 AND feedstock ilike '%s';
             % (pollutant, EtOHVals[fNum], self.db.schema, queryTable, feedstock)
            

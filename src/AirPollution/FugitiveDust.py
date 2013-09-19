@@ -26,31 +26,25 @@ class FugitiveDust(SaveDataHelper.SaveDataHelper):
     def setEmissions(self, run_code):
 # Forest Residue fugitive dust emissions            
         if run_code.startswith('FR'):
-            query = self.__forestRes__()
-           
+            self.__forestRes__()  
 # Corn Grain fugitivie dust emissions            
         elif run_code.startswith('CG'):
-            query = self.__cornGrain__(run_code)
-            
+            self.__cornGrain__(run_code)     
 # Wheat straw fugitive dust emissions            
         elif run_code.startswith('WS'):
-            query = self.__wheatSraw__(run_code)
-        
+            self.__wheatSraw__(run_code)
 # Corn stover fugitive dust emissions            
         elif run_code.startswith('CS'):
-            query = self.__cornStover__(run_code)
-        
+            self.__cornStover__(run_code)
 # switchgrass fugitive dust emissions            
         elif run_code.startswith('SG'):
             pass
-#            query = self.__switchgrass__(run_code)
  
-        self._executeQuery(query)
-        
- 
- 
+    '''
+    Forest residue fugitive dust emissions.
+    '''
     def __forestRes__(self):
-        pmFR = ( 0.0 ) * 0.907 / 2000  # 0 lbs per acre
+        pmFR = self.convertLbsToMt(0.0)
         # currently there are no pm emissions from FR operations
         query = """
             UPDATE fr_RAW fr
@@ -60,29 +54,28 @@ class FugitiveDust(SaveDataHelper.SaveDataHelper):
                 FROM %s.fr_data dat
                 WHERE (dat.fips = fr.fips)
             """ % (pmFR, pmFR, self.pmRatio, self.db.productionSchema)
-        return query
+        self._executeQuery(query)
        
     
-    
-    # build query based on the information contained by the run_code
+    '''
+    Corn grain fugitive dust emissions
+    '''    
     def __cornGrain__(self, run_code):
 # --emission factors: 
-        # 1.7 lbs/acre, convert to dt.
-        pmTransport = (1.2 * 0.907) / 2000 # dt / acre
+        # 1.7 lbs/acre, convert to mt.        
+        pmConvTillHarv = self.convertLbsToMt(2.4) # mt / acre
+        pmReduTillHarv = self.convertLbsToMt(2.4) # mt / acre
+        pmNoTillHarv = self.convertLbsToMt(2.4) # mt / acre
         
-        pmConvTillHarv = (2.4 * 0.907) / 2000 # dt / acre
-        pmReduTillHarv = (2.4 * 0.907) / 2000 # dt / acre
-        pmNoTillHarv = (2.4 * 0.907) / 2000 # dt / acre
-        
-        pmConvTillNonHarv = (8.0 * 0.907) / 2000 # dt / acre
-        pmReduTillNonHarv = (7.2 * 0.907) / 2000 # dt / acre
-        pmNoTillNonHarv = (5.2 * 0.907) / 2000 # dt / acre
+        pmConvTillNonHarv = self.convertLbsToMt(8.0) # mt / acre
+        pmReduTillNonHarv = self.convertLbsToMt(7.2) # mt / acre
+        pmNoTillNonHarv = self.convertLbsToMt(5.2) # mt / acre
         
         #irrigation emissions do not currently have PM emissions
-        pmDieIrrigation = (0.0 * 0.907) / 2000 # dt / acre
-        pmGasIrrigation = (0.0 * 0.907) / 2000 # dt / acre
-        pmLPGIrrigation = (0.0 * 0.907) / 2000 # dt / acre
-        pmCNGIrrigation = (0.0 * 0.907) / 2000 # dt / acre
+        pmDieIrrigation = self.convertLbsToMt(0.0) # mt / acre
+        pmGasIrrigation = self.convertLbsToMt(0.0) # mt / acre
+        pmLPGIrrigation = self.convertLbsToMt(0.0) # mt / acre
+        pmCNGIrrigation = self.convertLbsToMt(0.0) # mt / acre
         
         modelTransport = False
 # --                
@@ -149,55 +142,25 @@ class FugitiveDust(SaveDataHelper.SaveDataHelper):
                 operation = 'CNG'
                 EF = pmCNGIrrigation
  
-# execute query for transport operations
+        # execute query for transport operations
         if modelTransport: 
-            # pm10 = dt/acre * acre =  dt
-            # pm2.5 = dt/acre * acre * constant = dt
-            query = """
-                    UPDATE cg_raw cr
-                    SET 
-                        fug_pm10 = (%s * cd.%s_harv_AC),
-                        fug_pm25 = (%s * cd.%s_harv_AC) * %s
-                    FROM %s.cg_data cd
-                    WHERE     (cd.fips = cr.fips) AND 
-                              (cr.description ILIKE '%s') AND 
-                              (cr.description ILIKE '%s');                     
-                """ % (pmTransport, tableTill,
-                       pmTransport, tableTill, self.pmRatio,
-                       self.db.productionSchema,
-                       str("%transport%"),
-                       str("%" + tillage + "%")
-                       ) 
-            self._executeQuery(query)
+            # pm10 = mt/acre * acre =  mt
+            # pm2.5 = mt/acre * acre * constant = mt
+            self.transportQuery(run_code, tillage)
             
-# return query for non-transport operations
-        # pm10 = dt/acre * acre =  dt
-        # pm2.5 = dt/acre * acre * constant = dt
-        query = """
-                UPDATE cg_raw cr
-                SET 
-                    fug_pm10 = (%s * cd.%s_harv_AC),
-                    fug_pm25 = (%s * cd.%s_harv_AC) * %s
-                FROM %s.cg_data cd
-                WHERE     (cd.fips = cr.fips) AND 
-                          (cr.description ILIKE '%s') AND 
-                          (cr.description ILIKE '%s');                     
-            """ % (EF, tableTill,
-                   EF, tableTill, self.pmRatio,
-                   self.db.productionSchema,
-                   str("%" + operation + "%"),
-                   str("%" + tillage + "%")
-                   )
-        return query
+        # return query for non-transport operations
+        # pm10 = mt/acre * acre =  mt
+        # pm2.5 = mt/acre * acre * constant = mt
+        self.pmQuery(run_code, EF, tableTill, operation, tillage)
+            
     
-    
-    
+    '''
+    Corn stover fugitive dust emissions.
+    '''
     def __cornStover__(self, run_code):
-# --emission factors: 
-        pmTransport = (1.2 * 0.907) / 2000 # dt / acre
-        
-        pmReduTillHarv = (1.8 * 0.907) / 2000 # dt / acre
-        pmNoTillHarv = (1.8 * 0.907) / 2000 # dt / acre
+# --emission factors:         
+        pmReduTillHarv = self.convertLbsToMt(1.8) # mt / acre 
+        pmNoTillHarv = self.convertLbsToMt(1.8) # mt / acre 
 # --     
 
 # choose operation for reduced till
@@ -214,53 +177,23 @@ class FugitiveDust(SaveDataHelper.SaveDataHelper):
             operation = 'Harvest'
             EF = pmNoTillHarv
         
-# execute query for transport emissions
+        # execute query for transport emissions
         # pm10 = dt/acre * acre =  dt
         # pm2.5 = dt/acre * acre * constant = dt
-        transportQuery = """
-                UPDATE cs_raw cr
-                SET 
-                    fug_pm10 = (%s * cd.%s_harv_AC),
-                    fug_pm25 = (%s * cd.%s_harv_AC) * %s
-                FROM %s.cs_data cd
-                WHERE     (cd.fips = cr.fips) AND 
-                          (cr.description ILIKE '%s') AND 
-                          (cr.description ILIKE '%s');                     
-            """ % (pmTransport, tableTill,
-                   pmTransport, tableTill, self.pmRatio,
-                   self.db.productionSchema,
-                   str("%transport%"),
-                   str("%" + tillage + "%")
-                   ) 
-        self._executeQuery(transportQuery)
+        self.transportQuery(run_code, tillage)
 
-# return non-transport emissions query        
-        query = """
-                UPDATE cs_raw cr
-                SET 
-                    fug_pm10 = (%s * cd.%s_harv_AC),
-                    fug_pm25 = (%s * cd.%s_harv_AC) * %s
-                FROM %s.cs_data cd
-                WHERE     (cd.fips = cr.fips) AND 
-                          (cr.description ILIKE '%s') AND 
-                          (cr.description ILIKE '%s');                     
-            """ % (EF, tableTill,
-                   EF, tableTill, self.pmRatio,
-                   self.db.productionSchema,
-                   str("%" + operation + "%"),
-                   str("%" + tillage + "%")
-                   )
-        return query        
+        # return non-transport emissions query        
+        self.pmQuery(run_code, EF, tableTill, operation, tillage)        
     
     
-    
-# CS and WS have very similar fugitive dust emission factors
+    '''
+    Wheat straw fugitive dust emissions. 
+    Bassically the same as corn stover...
+    '''
     def __wheatSraw__(self, run_code):
-# --emission factors: 
-        pmTransport = (1.2 * 0.907) / 2000  # dt / acre
-        
-        pmReduTillHarv = (1.8 * 0.907) / 2000 # dt / acre
-        pmNoTillHarv = (1.8 * 0.907) / 2000 # dt / acre
+# --emission factors:         
+        pmReduTillHarv = self.convertLbsToMt(1.8) # mt / acre 
+        pmNoTillHarv = self.convertLbsToMt(1.8) # mt / acre 
 # --     
 
 # choose operation for reduced till
@@ -277,50 +210,77 @@ class FugitiveDust(SaveDataHelper.SaveDataHelper):
             operation = 'Harvest'
             EF = pmNoTillHarv
         
-# execute query for transport emissions
+        # execute query for transport emissions
         # pm10 = dt/acre * acre =  dt
         # pm2.5 = dt/acre * acre * constant = dt
-        transportQuery = """
-                UPDATE ws_raw wr
-                SET 
-                    fug_pm10 = (%s * cd.%s_harv_AC),
-                    fug_pm25 = (%s * cd.%s_harv_AC) * %s
-                FROM %s.ws_data cd
-                WHERE     (cd.fips = wr.fips) AND 
-                          (wr.description ILIKE '%s') AND 
-                          (wr.description ILIKE '%s')               
-            """ % (pmTransport, tableTill,
-                   pmTransport, tableTill, self.pmRatio,
-                   self.db.productionSchema,
-                   str("%transport%"),
-                   str("%" + tillage + "%")
-                   ) 
-        self._executeQuery(transportQuery)
-        
-# return non-transport emissions query        
+        self.transportQuery(run_code, tillage)
+        # return non-transport emissions query        
+        self.pmQuery(run_code, EF, tableTill, operation, tillage)  
+    
+    '''
+    Makes a query to update pm10 and pm2.5 from fugitive dust. Then executes that query. Calculates in units of metric tons.
+    @param run_code: run code used to get type of feedstock.
+    @param ef: Emission factor specific for each activity. In metric tons per acre.
+    @param till: Type of till used.
+    @param activity: Type of activity used to make emission.
+    @param tillType: Type of till in description.
+    '''
+    def pmQuery(self, run_code, ef, till, activity, tillType):
+        feed = run_code.lower()[0:2]
         query = """
-                UPDATE ws_raw wr
+                UPDATE """ + feed + """_raw raw
                 SET 
-                    fug_pm10 = (%s * cd.%s_harv_AC),
-                    fug_pm25 = (%s * cd.%s_harv_AC) * %s
-                FROM %s.ws_data cd
-                WHERE     (cd.fips = wr.fips) AND 
-                          (wr.description ILIKE '%s') AND 
-                          (wr.description ILIKE '%s') 
-            """ % (EF, tableTill,
-                   EF, tableTill, self.pmRatio,
-                   self.db.productionSchema,
-                   str("%" + operation + "%"),
-                   str("%" + tillage + "%")
-                   )
-        return query  
+                    fug_pm10 = (""" + str(ef) + """ * cd.""" + str(till) + """_harv_AC),
+                    fug_pm25 = (""" + str(ef) + """ * cd.""" + str(till) + """_harv_AC) * """ + str(self.pmRatio) + """
+                FROM """ + str(self.db.productionSchema) + """.""" + str(feed) + """_data cd
+                WHERE     (cd.fips = raw.fips) AND 
+                          (raw.description ILIKE '""" + str("%" + activity + "%") + """') AND 
+                          (raw.description ILIKE '""" + str("%" + tillType + "%") + """')"""
+        self._executeQuery(query)
+        
+    '''
+    Calculates pm10 and pm2.5 emissions from transportation and makes a query to update db. Calculates in units of metric tons.
     
+    Equation from http://www.epa.gov/ttnchie1/ap42/ch13/final/c13s0202.pdf     13.2.2 Unpaved Roads pg 3.
+    Gives units of lbs which must be converted to metric tons.
+    E = [k * v (s/12)^a (W/3)^b] / (M/0.2)^c
+    E converted = (E * 0.907) / 2000
+    Where:    v = vehicle miles traveled (default 10)
+              s = silt content (%)
+              W = mass of vehicle (tons)
+              M = moisture content (%)
+              
+    @param run_code: Run code to get feed stock from.
+    @param tillType: Tillage type. Used to update correct row in feedstock_raw. 
+    '''
+    def transportQuery(self, run_code, tillType):
+        feed = run_code.lower()[0:2]
+        # factors for equation.
+        weight = str(32.01)  # tons
+        k25, k10 = str(0.38), str(2.6)    # constant
+        a25, a10 = str(0.8), str(0.8)     # constant
+        b25, b10 = str(0.4), str(0.4)     # constant
+        c25, c10 = str(0.3), str(0.3)     # constant
+        #TODO: convert from lbs to dt
+        query = """
+                UPDATE """ + feed + """_raw raw
+                SET 
+                    fug_pm10 = """ + str("("+k10+"*10*0.907*((tfd.silt/12)^"+a10+")*(("+weight+"/3)^"+b10+"))/(((tfd.moisture/0.2)^"+c10+")*2000)") + """,
+                    fug_pm25 = """ + str("("+k25+"*10*0.907*((tfd.silt/12)^"+a25+")*(("+weight+"/3)^"+b25+"))/(((tfd.moisture/0.2)^"+c25+")*2000)") + """
+                FROM """ + self.db.constantsSchema + """.transportfugitivedust tfd
+                WHERE     (raw.fips ilike tfd.fips || '%') AND 
+                          (raw.description ILIKE '""" + str("%transport%") + """') AND 
+                          (raw.description ILIKE '""" + str("%" + tillType + "%") + """')"""
+        self._executeQuery(query)
     
-    
-    def __switchgrass__(self, run_code):
-        pass
-    
-
+    '''
+    Convert from lbs to metric tons. 
+    @param ef: Emission factor in lbs/acre. Converted to mt/acre.  
+    @return Emission factor in mt/acre
+    '''
+    def convertLbsToMt(self, ef):
+        mt = (ef * 0.907) / 2000.0 # metric tons.
+        return mt
 
 
 #Data structure to hold SG emission factors
@@ -334,9 +294,9 @@ class SG_FugitiveDust(SaveDataHelper.SaveDataHelper):
         # to convert from PM10 to PM2.5, b/c PM2.5 is smaller.
         self.pmRatio = 0.20
         
-        #TODO: look over emission factors. Do not make sense b/c non-harvest should have larger factors then harvest.
         if operation == 'Transport':
-            emissionFactors = [
+            # these emissions are not used any more for calculating emissions. Just tells code how long to loop for.
+            emissionFactors = [     # lbs/acre
                                     1.2, #year 1 transport emission factor
                                     1.2, #year 2
                                     1.2, #year 3
@@ -350,9 +310,8 @@ class SG_FugitiveDust(SaveDataHelper.SaveDataHelper):
                                     ]
             self.description = 'SG_T'
             
-        
         elif operation == 'Harvest':
-            emissionFactors = [
+            emissionFactors = [     # lbs/acre
                                     2.4, #year 1 harvest emission factor
                                     2.4, #year 2
                                     2.4, #year 3
@@ -367,7 +326,7 @@ class SG_FugitiveDust(SaveDataHelper.SaveDataHelper):
             self.description = 'SG_H'
             
         elif operation == 'Non-Harvest':
-            emissionFactors = [
+            emissionFactors = [     # lbs/acre
                                     7.6, #year 1 non-harvest emission factor
                                     2.0, #year 2
                                     0.8, #year 3
@@ -381,30 +340,46 @@ class SG_FugitiveDust(SaveDataHelper.SaveDataHelper):
                                     ]
             self.description = 'SG_N'
         
-        self.emissionFactors = (x * 0.907 / 2000.0 for x in emissionFactors) #convert from lbs to metric tons. dt / acre          
+        self.emissionFactors = (x * 0.907 / 2000.0 for x in emissionFactors) #convert from lbs to metric tons. mt / acre          
                         
                             
     def setEmissions(self):
-        for year, EF in enumerate(self.emissionFactors):
-            
+        for year, EF in enumerate(self.emissionFactors):   
             # return non-transport emissions query      
-            # pm10 = dt/acre * acre =  dt
-            # pm2.5 = dt/acre * acre * constant = dt  
+            # pm10 = mt/acre * acre =  mt
+            # pm2.5 = mt/acre * acre * constant = mt  
             # switch grass on a 10 year basis.
-            query = """
-                    UPDATE sg_raw raw
-                    SET 
-                        fug_pm10 = (%s * dat.harv_AC) / 10,
-                        fug_pm25 = ((%s * dat.harv_AC) * %s) / 10
-                    FROM %s.sg_data dat
-                    WHERE     (dat.fips = raw.fips) AND 
-                              (raw.run_code ILIKE '%s');                     
-                """ % (EF, 
-                       EF, self.pmRatio,
-                       self.db.productionSchema,
-                       str("%" + self.description + str(year+1) + "%")
-                       )
-            
+            if self.description == 'SG_N' or self.description == 'SG_H':
+                query = """
+                        UPDATE sg_raw raw
+                        SET 
+                            fug_pm10 = (%s * dat.harv_AC) / 10,
+                            fug_pm25 = ((%s * dat.harv_AC) * %s) / 10
+                        FROM %s.sg_data dat
+                        WHERE     (dat.fips = raw.fips) AND 
+                                  (raw.run_code ILIKE '%s');                     
+                    """ % (EF, 
+                           EF, self.pmRatio,
+                           self.db.productionSchema,
+                           str("%" + self.description + str(year+1) + "%")
+                           )
+            elif self.description == 'SG_T':
+                # factors for equation.
+                weight = str(32.01)  # tons
+                k25, k10 = str(0.38), str(2.6)    # constant
+                a25, a10 = str(0.8), str(0.8)     # constant
+                b25, b10 = str(0.4), str(0.4)     # constant
+                c25, c10 = str(0.3), str(0.3)     # constant
+                #TODO: convert from lbs to dt
+                query = """
+                        UPDATE sg_raw raw                                                                  
+                        SET 
+                            fug_pm10 = """ + str("(("+k10+"*10*0.907*((tfd.silt/12)^"+a10+")*(("+weight+"/3)^"+b10+"))/(((tfd.moisture/0.2)^"+c10+")*2000.0))/10.0") + """,
+                            fug_pm25 = """ + str("(("+k25+"*10*0.907*((tfd.silt/12)^"+a25+")*(("+weight+"/3)^"+b25+"))/(((tfd.moisture/0.2)^"+c25+")*2000.0))/10.0") + """
+                        FROM """ + self.db.constantsSchema + """.transportfugitivedust tfd
+                        WHERE     (raw.fips ilike tfd.fips || '%') AND 
+                                  (raw.run_code ILIKE '""" + str("%" + self.description + str(year+1) + "%") + """')"""
+
             self._executeQuery(query)
             
 

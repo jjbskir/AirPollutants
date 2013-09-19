@@ -1,21 +1,14 @@
+'''
+Created on Aug 26, 2013
+
+@author: lcauser
+'''
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from pylab import *
 import matplotlib.pyplot as plt
 from scipy.stats import scoreatpercentile
 
-"""
-@comments: much of this plotting utility was taken from the following URL:
-http://matplotlib.org/examples/pylab_examples/boxplot_demo2.html
-"""
-
-"""
-Creates a graph for each air pollutant emmision. Calculates emissions per acre.
-Saved as Figures/EmissionsPerAcre_'+pollutant+'.png
-Each graph has the total amount of air pollutants for each feedstock.
-X-axis: feedstock
-Y-axis: pollutant emmisions per acre.
-"""
-class EmissionsPerAcreFigure():
+class EmissionPerProdFigure(object):
     '''
     Create emmision graphs per a acre..
     @param db: Database.
@@ -24,20 +17,18 @@ class EmissionsPerAcreFigure():
     def __init__(self, cont):
         self.path = cont.get('path')
         self.db = cont.get('db')
-        self.documentFile = "EmissionsPerAcreFigure"
+        self.documentFile = "EmissionsPerProdFigure"
                     
     #define inputs/constants:  
-        pollutantLabels = ['$NO_x$', '$NH_3$', '$CO$', '$SO_x$','$VOC$','$PM_{10}$','$PM_{2.5}$']
+        pollutantLabels = ['$PM_{10}$','$PM_{2.5}$']
+        # the order of the 2 list has to be the same.
+        feedstockList = ['Corn Grain','Switchgrass','Corn Stover','Wheat Straw', 'Forest Residue']
+        fList = ['CG','SG', 'CS','WS', 'FR']
+        pollutantList = ['pm10','pm25']
         
-        feedstockList = ['Corn Grain','Switchgrass','Corn Stover','Wheat Straw']
-        fList = ['CG','SG','CS','WS']
-        pollutantList = ['NOx','NH3','CO','SOx','VOC','PM10','PM25']
-    
-        queryTable = 'summedemissions'
-    
         for pNum, pollutant in enumerate(pollutantList):
     #-----------------EXTRACT DATA FROM THE DATABASE-----------------    
-            dataArray = self.__collectData__(queryTable, feedstockList, pollutant)
+            dataArray = self.__collectData__(feedstockList, pollutant, fList)
     #-----------------PART 2, PLOT DATA----------------------------------
             #pretty plotting things
             fig = plt.figure(figsize=(8,6))
@@ -54,35 +45,45 @@ class EmissionsPerAcreFigure():
             plt.setp(bp['boxes'], color='black')
             plt.setp(bp['whiskers'], color='black', linestyle='-')
             # remove to get rid of log scale.
-            plt.yscale('log')
+            #plt.yscale('log')
     
             plotTitle=pollutantLabels[pNum]
-            axisTitle = '%s emissions  (g/acre)' % (pollutantLabels[pNum])
+            axisTitle = '%s emissions (dt fugitive dust/lbs feedstock)' % (pollutantLabels[pNum])
             
             self.__setAxis__(plotTitle, axisTitle, dataArray, fList)    
     #plot 95% intervals 
             perc95 = self.__plotInterval__(dataArray)
     
-            fig.savefig(self.path + 'Figures/EmissionsPerAcre_'+pollutant+'.png', format = 'png')
+            fig.savefig(self.path + 'Figures/EmissionsPerProd_'+pollutant+'.png', format = 'png')
     
             print pollutant
                 
-            
-    
-    def __collectData__(self, queryTable, feedstockList, pollutant):
+       
+    def __collectData__(self, feedstockList, pollutant, fList):
         data = []
         for fNum, feedstock in enumerate(feedstockList):
             '''
-            emmissions per acre = (pollutant lbs) / (total acres)
-            emmissions = pollutant / harv_ac
+            emmissions per production = (pollutant dt) / (total feedstock harvested dt)
+            emmissions = pollutant / prod
             TODO: Should harv_ac > 0.0 be here? Should this be in the Options class to eliminate the problem in the first place.
             '''
+            feedAbr = fList[fNum]
             query = """
-                    SELECT (%s) / (harv_ac) FROM %s.%s WHERE harv_ac > 0.0 AND feedstock ilike '%s';
-                    """  % (pollutant, self.db.schema, queryTable, feedstock)
+                WITH fug as (
+                    SELECT 
+                      """ + feedAbr + """_raw.fips, 
+                      sum(""" + feedAbr + """_raw.fug_""" + pollutant + """) as """ + pollutant + """
+                    FROM 
+                      """ + self.db.schema + """.""" + feedAbr + """_raw
+                    GROUP BY """ + feedAbr + """_raw.fips
+                    )
+                SELECT (fug.""" + pollutant + """ / s.prod)
+                FROM """ + self.db.schema + """.summedemissions as s
+                LEFT JOIN fug on fug.fips = s.fips
+                WHERE s.feedstock ilike '%""" + feedstock + """%' and s.prod > 0.0
+                    """
             emmisions = self.db.output(query, self.db.schema)
             data.append(emmisions)
-             
         return data
     
     
@@ -118,7 +119,7 @@ class EmissionsPerAcreFigure():
         # to view sg, cs, and ws spread: self.ax1.set_ylim(bottom=1e-07, top=0.0002
         # to view cg spread: self.ax1.set_ylim(bottom=0.0002, top=.003)     
         # to view pm spread: self.ax1.set_ylim(bottom=1e-04, top=0.002)                  
-        self.ax1.set_ylim(bottom=1e-07, top=1e-01)
+        self.ax1.set_ylim(bottom=0.000005, top=0.0009)
                 
         # Hide these grid behind plot objects
         self.ax1.set_axisbelow(True)
@@ -126,5 +127,22 @@ class EmissionsPerAcreFigure():
         self.ax1.set_ylabel(axisTitle, size=25, style='normal')    
         
     
-        self.ax1.set_xticklabels(data_labels, size=25, style='normal')                         
+        self.ax1.set_xticklabels(data_labels, size=25, style='normal')
+        
+        
+if __name__ == "__main__": 
+    from model.Database import Database
+    import Container
+    
+    title = 'sgNew'
+    cont = Container.Container()
+    cont.set('path', 'C:/Nonroad/%s/' % (title))
+    cont.set('db', Database(title))
+    
+    # Emissions per a production lb figure.
+    print 'Creating emissions per lb figure.'
+    EmissionPerProdFigure(cont)
+    
+    
+    
     

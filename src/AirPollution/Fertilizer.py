@@ -75,12 +75,14 @@ class Fertilizer(SaveDataHelper.SaveDataHelper):
                 
     def __cornStover__(self, feed):
         '''
-        why divide by 2000?
-        Why is nh3 calculated differently from nox? 17/14?
+        NOX N_app data is in units of lbs of nox per ton of N nutirnent.
+        NH3 N_app data is in units of % of N volatized as NH3.
         
         All for a specific fertilizer:
-        Nitrogen application for feed stock (lbs fertilizer) * % of fertilizer * Pollutant emmision * lbs active / lbs fertilizer * Total feedstock harvested (lbs)
-        (lbs fertilizer) * (lbs pollutant) * (lbs active / lbs fertilizer) * (lbs feedstock) = lbs pollutant?
+        Nitrogen application for feed stock (lbs fertilizer/lb feedstock) * % of fertilizer * Pollutant emmision * convert lbs to mt * Total feedstock harvested (lbs)
+        (dt fertilizer/lb feedstock) * (lbs NOX / dt fertilizer) * (mt/lbs) * (lbs feedstock) = mt NOX
+        
+        (lbs fertilizer/lb feedstock) * (% NH3) * (mt/lbs) * (lbs feedstock) * (lbs NH3/lbs fertilizer) for (17.0/14.0)? = mt NH3
         '''
         fertQuery = """        
 INSERT INTO """ + feed + """_nfert
@@ -313,7 +315,11 @@ INSERT INTO """ + feed + """_nfert
         return fertQuery
 
 
-
+    '''
+    ((dt fertilizer/acre feedstock) * acres feedstock) * (lbs NOX / dt fertilizer) * (mt/lbs) = mt NOX
+        
+    ((dt fertilizer/acre feedstock) * acres feedstock) * (% NH3) * (lbs NH3/lbs fertilizer)*2000->dt for (17.0/14.0) * (mt/lbs) = mt NH3
+    '''
     def __cornGrain__(self):
         fertQuery = """
 INSERT INTO cg_nfert

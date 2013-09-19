@@ -9,15 +9,6 @@ class NEIComparison(SaveDataHelper.SaveDataHelper):
         SaveDataHelper.SaveDataHelper.__init__(self, cont)
         self.documentFile = "NEIComparison"
         
-        self.cellulosicAllocation = 0.34
-        self.cornGrainAllocation = 0.54
-        
-        # Old NEI data from Noah.
-        #self.nei_data_by_county = self.db.constantsSchema + ".nei_data_by_county"
-        # new NEI data from Jeremy.
-        # nei_nonroad_nonpoint and nei_total
-        self.nei_data_by_county = "full2008nei.nei_total"
-        
         query = """
 CREATE TABLE summedEmissions
 (
@@ -194,14 +185,24 @@ nh3    float);"""
  
     
     def createNEIComparison(self, feedstock):
-        if feedstock == 'CG':
-            allocation = str(self.cornGrainAllocation)
-        else: 
-            allocation = str(self.cellulosicAllocation)
         
+        # Old NEI data from Noah.
+        #self.nei_data_by_county = self.db.constantsSchema + ".nei_data_by_county"
+        # new NEI data from Jeremy.
+        # nei_nonroad_nonpoint and nei_total
+        self.nei_data_by_county = "full2008nei.nei_total"
+        # @change: Change allocation. Allocation is the amount of the feedstock that actually get's used to produce ethanol.
+        # 9/3
+        # old code:     self.cellulosicAllocation = 0.34
+        #               self.cornGrainAllocation = 0.54
+        # new code:     allocation = 0.52
+        # @change: convert NEI data from short tons to metric tons.
+        # 9/11
+        # old code:     nei.nox
+        # new code:     nei.nox * 0.907185
+        allocation = str(0.52)
             
         self.__setNEIRatioTable__(feedstock)
-        
         
         if feedstock == 'CG':
             f = 'Corn Grain'
@@ -213,41 +214,77 @@ nh3    float);"""
             f = 'Wheat Straw'
         elif feedstock == 'FR':
             f = 'Forest Residue' 
+        elif feedstock == 'cellulosic':
+            f = 'cellulosic'
         
         
-        # self.db.constantsSchema + ".nei_data_by_county"
-        #TODO: Change where nei data is collected from to fullnei2008.nei_total
-        query = """
-INSERT INTO """+feedstock+"""_NEIRatio
-WITH
-   nrel AS (select distinct fips,  sum(nox) as nox,
-                   sum(sox) as sox,
-                   sum(co) as co,
-                   sum(pm10) as pm10,
-                   sum(pm25) as pm25,
-                   sum(voc) as voc,
-                   sum(nh3) as nh3 from summedEmissions where feedstock ilike '%"""+f+"""%' GROUP BY fips),
-   nei as (select fips, nox, sox, co, pm10, pm25, voc, nh3 from """+self.nei_data_by_county+""")
-
-   select c.fips,
-            (nrel.nox * """+allocation+""") / nei.nox as nox, 
-            (nrel.sox * """+allocation+""") / nei.sox as sox,
-            (nrel.co * """+allocation+""") / nei.co as co,
-            (nrel.pm10 * """+allocation+""") / nei.pm10 as PM10,
-            (nrel.pm25 * """+allocation+""") / nei.pm25 as PM25,
-            (nrel.voc * """+allocation+""") / nei.voc as VOC,
-            (nrel.nh3 * """+allocation+""") / nei.nh3 as NH3
-
-    from """+ self.db.productionSchema +""".cg_data c
-
-    LEFT JOIN nrel ON c.fips = nrel.fips
-
-    LEFT JOIN nei ON c.fips = nei.fips
+        if f is not 'cellulosic': 
+            # For the NEI data convert from short ton to metric ton by multiplying nei data by 0.907185
+            query = """
+    INSERT INTO """+feedstock+"""_NEIRatio
+    WITH
+       nrel AS (select distinct fips,  sum(nox) as nox,
+                       sum(sox) as sox,
+                       sum(co) as co,
+                       sum(pm10) as pm10,
+                       sum(pm25) as pm25,
+                       sum(voc) as voc,
+                       sum(nh3) as nh3 
+                from sgnew.summedemissions 
+                where feedstock ilike '%"""+f+"""%' 
+                GROUP BY fips),
+       nei as (select fips, nox, sox, co, pm10, pm25, voc, nh3 
+               from """+self.nei_data_by_county+""")
     
-    WHERE nei.nh3 IS NOT NULL
+       select   nrel.fips,
+                (nrel.nox * """+allocation+""") / (nei.nox * 0.907185) as nox, 
+                (nrel.sox * """+allocation+""") / (nei.sox * 0.907185) as sox,
+                (nrel.co * """+allocation+""") / (nei.co * 0.907185) as co,
+                (nrel.pm10 * """+allocation+""") / (nei.pm10 * 0.907185) as PM10,
+                (nrel.pm25 * """+allocation+""") / (nei.pm25 * 0.907185) as PM25,
+                (nrel.voc * """+allocation+""") / (nei.voc* 0.907185) as VOC,
+                CASE WHEN nei.nh3 > 0 THEN     (nrel.nh3 * """+allocation+""") / (nei.nh3 * 0.907185)
+                     ELSE 0.0    
+                END as NH3
+    
+        FROM nrel
+        LEFT JOIN nei ON nrel.fips = nei.fips    
+        WHERE nrel.nh3 > 0 and nei.nox > 0
+                """
+        
+        else:   
+            # query everything 
+            query = """
+    INSERT INTO """+feedstock+"""_NEIRatio
+    WITH
+       nrel AS (select distinct fips,  sum(nox) as nox,
+                       sum(sox) as sox,
+                       sum(co) as co,
+                       sum(pm10) as pm10,
+                       sum(pm25) as pm25,
+                       sum(voc) as voc,
+                       sum(nh3) as nh3 
+                from sgnew.summedemissions 
+                GROUP BY fips),
+       nei as (select fips, nox, sox, co, pm10, pm25, voc, nh3 
+               from """+self.nei_data_by_county+""")
+    
+       select   nrel.fips,
+                (nrel.nox  * """+allocation+""") / (nei.nox * 0.907185) as nox, 
+                (nrel.sox * """+allocation+""") / (nei.sox * 0.907185) as sox,
+                (nrel.co * """+allocation+""") / (nei.co * 0.907185) as co,
+                (nrel.pm10 * """+allocation+""") / (nei.pm10 * 0.907185) as PM10,
+                (nrel.pm25 * """+allocation+""") / (nei.pm25 * 0.907185) as PM25,
+                (nrel.voc * """+allocation+""") / (nei.voc * 0.907185) as VOC,
+                CASE WHEN nei.nh3 > 0 THEN     (nrel.nh3 * """+allocation+""") / (nei.nh3 * 0.907185) 
+                     ELSE 0.0    
+                END as NH3
+    
+        FROM nrel
+        LEFT JOIN nei ON nrel.fips = nei.fips    
+        WHERE nrel.nh3 > 0 and nei.nox > 0
+                """
 
-
-"""
         self._executeQuery(query)
         
         

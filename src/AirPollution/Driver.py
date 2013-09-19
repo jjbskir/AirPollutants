@@ -16,6 +16,7 @@ import SinglePassAllocation
 import NEIComparison
 import EmissionsPerGalFigure
 from EmissionsPerAcreFigure import EmissionsPerAcreFigure
+from EmissionPerProdFigure import EmissionPerProdFigure
 import RatioToNEIFigure
 import ContributionFigure
 
@@ -235,8 +236,14 @@ class Driver:
                 NEI.createSummedEmissionsTable(feedstock)
                 
             #create tables that contain a ratio to NEI
+            count = 0
             for feedstock in feedstockList:
                 NEI.createNEIComparison(feedstock)
+                if count == 4:
+                    # on the last go, make a total query for all cellulosic.
+                    NEI.createNEIComparison('cellulosic')
+                count += 1
+                    
             
     #----------------------------------------------------------------
     
@@ -256,19 +263,14 @@ class Driver:
             print 'Creating emissions per acre figure.'
             EmissionsPerAcreFigure(self.cont)
             
+            # Emissions per a production lb figure.
+            print 'Creating emissions per lb figure.'
+            EmissionPerProdFigure(self.cont)
+            
             
             #Ratio to NEI
             RatioToNEIFigure.RatioToNEIFig(self.cont)
-            '''
-            for feedstock in feedstockList:
-                pass
-            
-            #create all feedstock and cellulosic NEI ratios
-            if len(feedstock) == 5:
-                pass
-            
-            ratioNEI.f.close()
-            '''
+ 
         
     #----------------------------------------------------------------
                     

@@ -35,21 +35,21 @@ class CombustionEmissions(SaveDataHelper.SaveDataHelper):
 
     def populateTables(self, run_codes, modelRunTitle):
         
-        #-------Inputs Begin
-        # # 1 short ton (2000 lbs) = 0.90718474 tonne ( 1 Mg)
-        convert_tonne = 0.9071847  # short ton / Metric ton
+        # short ton = 0.90718474 metric tonn
+        convert_tonne = 0.9071847  # metric ton / dry ton
         
-        # # DOE conversion from BTU/gal of diesel, LHV: light heat value.
+        # DOE conversion from BTU/gal of diesel, LHV: light heat value.
         # also part of GREET Argonne model for conversion.
         self.LHV = 128450.0 / 1e6  # mmBTU / gallon --> default for diesel fuel, changed for other fuel types
                 
-        # # RSF2 impact analysis NH3 emission factor
+        # SF2 impact analysis NH3 emission factor
         self.NH3_EF = 0.68  # gNH3 / mmBTU --> default for diesel fuel, changed for other fuel types
         
-        # # Convert THC to VOC
+        # From EPA NONROAD Conversion Factors for Hydrocarbon Emission Components.
+        # Convert THC to VOC
         self.vocConversion = 1.053  # --> default for diesel fuel
         
-        # # Convert PM10 to PM2.5
+        # Convert PM10 to PM2.5
         # not used at the moment...
         self.pm10toPM25 = 0.97  # --> default for diesel fuel
         # convert from gallons to btu.
@@ -90,15 +90,16 @@ class CombustionEmissions(SaveDataHelper.SaveDataHelper):
                         HP = row[3]   
                         description, operation = self._getDescription(run_code, SCC, HP) 
                         # check if it is a feedstock and operation that should be recorded.
-                        if feedstock == 'FR' or self.operationDict[feedstock][operation[0]]:           
-                            # short ton / Metric ton
+                        if feedstock == 'FR' or self.operationDict[feedstock][operation[0]]:  
+                            # all emissions are recorder in metric tons.         
+                            # dry ton * metric ton / dry ton = metric ton
                             THC = float(row[5]) * convert_tonne
                             CO = float(row[6]) * convert_tonne
                             NOx = float(row[7]) * convert_tonne
                             CO2 = float(row[8]) * convert_tonne
                             SO2 = float(row[9]) * convert_tonne
                             PM10 = float(row[10]) * convert_tonne
-                            PM25 = float(row[10]) * 0.97 * convert_tonne
+                            PM25 = float(row[10]) * self.pm10toPM25 * convert_tonne
                             '''
                             fuel consumption
                             NONROAD README 5-10
@@ -109,9 +110,8 @@ class CombustionEmissions(SaveDataHelper.SaveDataHelper):
                             '''
                             FuelCons = float(row[19])  # gal/year
                             
-                            # should this be converted to tonne again?
-                            VOC = THC * self.vocConversion * convert_tonne                    
-                            NH3 = FuelCons * self.LHV * self.NH3_EF / (1e6)  # gal/year * mmBTU/gal * gNH3/mmBTU * Mg/g = 
+                            VOC = THC * self.vocConversion                    
+                            NH3 = FuelCons * self.LHV * self.NH3_EF / (1e6)  # gal * mmBTU/gal * gNH3/mmBTU = g NH3
                             
                             
                             # allocate non harvest emmisions from cg to cs and ws.

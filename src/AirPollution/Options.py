@@ -132,51 +132,12 @@ class ScenarioOptions:
                 # @attention: %s.cg_data was found to be %s.cdata.
                 # Came to this conclusiong b/c in the CG part.
                 ###########   
-                '''
-                '''
-                #old query.
-                if run_code.endswith('D'): fuel_type = 'A'
-                elif run_code.endswith('G'): fuel_type = 'B'
-                elif run_code.endswith('L'): fuel_type = 'C'
-                elif run_code.endswith('C'): fuel_type = 'D'
-                
-                query = """
-                Set search_path to %s; 
-                WITH
-                    IRR AS (
-                    SELECT 
-                        A.state,
-                        %s.fuel as fuel, %s.hp as hp, %s.percent as perc, %s.hrsperacre as hpa
-                    FROM
-                        cg_irrigated_states A JOIN
-                        cg_irrigated_states B ON (A.state = B.state) JOIN
-                        cg_irrigated_states C ON (B.state = C.state) JOIN
-                        cg_irrigated_states D ON (C.state = D.state)
-                    WHERE
-                        A.fuel ilike 'Diesel' AND
-                        B.fuel ilike 'Gasoline' AND
-                        C.fuel ilike 'LPG' AND
-                        D.fuel ilike 'natgas'
-                    )
-                    
-                select ca.fips, ca.st, dat.total_harv_ac * irr.perc, dat.total_prod, 
-                        irr.fuel, irr.hp, irr.perc, irr.hpa
-                        
-                            from county_attributes ca
-                            left join %s.cg_data dat on ca.fips = dat.fips
-                            left join irr on irr.state ilike ca.st
-                            
-                            where ca.st ilike irr.state
-                            order by ca.fips asc
-                    """ % (self.db.constantsSchema, fuel_type, fuel_type, fuel_type, fuel_type, self.db.productionSchema)
-                    
-                '''    
-                         
+                '''             
                 if run_code.endswith('D'): fuel_type = 'diesel'
                 elif run_code.endswith('G'): fuel_type = 'gasoline'
                 elif run_code.endswith('L'): fuel_type = 'lpg'
                 elif run_code.endswith('C'): fuel_type = 'natgas'
-                
+                print fuel_type
                 query = """
                 WITH IRR AS (
                     SELECT 
